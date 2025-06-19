@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>InStep Referral Game</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>InStep Referral Assessment</h1>
+        <p>This quick assessment will help determine if a student is a good fit for the InStep program based on their qualifications.</p>
+
+        <div id="start-container">
+            <h2>Welcome!</h2>
+            <p>Are you looking to refer a student to the InStep program?</p>
+            <button id="start-button" class="primary-button">Start Assessment</button>
+        </div>
+
+        <div id="input-form-container" style="display: none;">
+            <h2>Student Details</h2>
+            <p>Please provide the student's information before proceeding to the assessment.</p>
+            <form id="student-data-form">
+                <div class="form-group">
+                    <label for="firstName">First Name:</label>
+                    <input type="text" id="firstName" name="firstName" required>
+                </div>
+                <div class="form-group">
+                    <label for="lastName">Last Name:</label>
+                    <input type="text" id="lastName" name="lastName" required>
+                </div>
+                <div class="form-group">
+                    <label for="resume">Resume (PDF, DOCX):</label>
+                    <input type="file" id="resume" name="resume" accept=".pdf,.doc,.docx" required>
+                </div>
+                <button type="submit" id="submit-student-data" class="primary-button">Continue to Assessment</button>
+            </form>
+        </div>
+
+        <div id="quiz-container" style="display: none;">
+            </div>
+
+        <div id="results-container" style="display: none;">
+            <h2>Assessment Complete!</h2>
+            <p id="result-message"></p>
+            <button id="restart-button" class="secondary-button">Start New Assessment</button>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
