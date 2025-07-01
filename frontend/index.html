@@ -6,7 +6,7 @@
     <title>InStep Referral Game</title>
     <link rel="stylesheet" href="style.css">
 </head>
-<body>
+<body style="display:flex;flex-direction:column;align-items:center;"> <!-- Temp code to allow quiz and point & clcik to stack.-->
     <div class="container">
         <h1>InStep Referral Assessment</h1>
         <p>This quick assessment will help determine if a student is a good fit for the InStep program based on their qualifications.</p>
@@ -37,8 +37,7 @@
             </form>
         </div>
 
-        <div id="quiz-container" style="display: none;">
-            </div>
+        <div id="quiz-container" style="display: none;"></div>
 
         <div id="results-container" style="display: none;">
             <h2>Assessment Complete!</h2>
@@ -49,12 +48,16 @@
 
     <script src="script.js"></script>
 
-    <br>
-    <!--- HTML Canvas is an element used to draw graphics on a web page via JavaScript.-->
-    <canvas id="gameCanvas" width="800" height="600"></canvas>
+    <!-- load matter.js (physics engine) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.20.0/matter.min.js"></script>
+
+    <!-- load canvas-txt (text drawing tool) -->
+    <script src="https://unpkg.com/canvas-txt@4.1.1/dist/canvas-txt.min.js" defer></script>
+
+    <!--- load HTML Canvas (used to draw graphics on a web page via JavaScript.)-->
+    <canvas id="gameCanvas"></canvas>
+
     <!--- Runs the game script-->
-    <!--- <script src="/game/Target.js"></script> -->
-    <!--- <script src="/game/Button.js"></script> -->
-    <script type ="module" src="/game/game.js"></script>
+    <script type="module" src="/game/game.js"></script>
 </body>
 </html>

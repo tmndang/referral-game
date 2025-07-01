@@ -1,0 +1,103 @@
+{
+  "interactions": [
+    {
+      "id": "crackCoconut",
+      "trigger": "collision",
+      "groups": ["coconut", "beachRock"],
+      "condition": {
+        "type": "impactSpeed",
+        "operator": ">=",
+        "value": 10
+      },
+      "actions": [
+        { "type": "removeSelf" },
+        {
+          "type": "spawn",
+          "newId": "coconutmeat_{timestamp}",
+          "shape": "circle",
+          "x": "{self.x}",
+          "y": "{self.y}",
+          "radius": 32,
+          "options": {
+            "restitution": 0.4,
+            "render": {
+              "sprite": {
+                "texture": "/game/images/matterObjectSprites/room_beach/crackedCoconut.png"
+              }
+            }
+          },
+          "metadata": { "group": "coconutmeat" },
+          "texture": "/game/images/matterObjectSprites/room_beach/crackedCoconut.png"
+        }
+      ],
+      "popup": {
+        "text": "CRACK!",
+        "offset": { "x": 0, "y": -20 }
+      }
+    },
+    {
+      "id": "eatMeat",
+      "trigger": "collision",
+      "groups": ["coconutmeat", "YUM_ZONE"],
+      "actions": [
+        { "type": "removeSelf" }
+      ],
+      "popup": {
+        "text": "YUM!",
+        "offset": { "x": 0, "y": 0 }
+      },
+      "emitEvent": "meatEaten"
+    },
+    {
+      "id": "starSplash",
+      "trigger": "collision",
+      "groups": ["starfish", "SPLASH_ZONE"],
+      "condition": {
+        "type": "velocityY",
+        "operator": ">",
+        "value": 0
+      },
+      "actions": [
+        { "type": "removeSelf" }
+      ],
+      "popup": {
+        "text": "SPLASH!",
+        "offset": { "x": 0, "y": 0 }
+      },
+      "emitEvent": "starSplashed"
+    },
+    {
+      "id": "stackRocks",
+      "trigger": "cluster",
+      "groups": ["beachRock"],
+      "minCount": 4,
+      "xTolerance": 100,
+      "yTolerance": 200,
+      "stillThreshold": 0.05,
+      "actions": [
+        { "type": "removeGroup" },
+        {
+          "type": "spawn",
+          "newId": "parrotStatue",
+          "shape": "rectangle",
+          "width": 109,
+          "height": 181,
+          "options": {
+            "isStatic": false,
+            "render": {
+              "sprite": {
+                "texture": "/game/images/matterObjectSprites/room_beach/parrotStatue.png"
+              }
+            }
+          },
+          "metadata": { "resistRotation": true, "group": "beachRock" },
+          "texture": "/game/images/matterObjectSprites/room_beach/parrotStatue.png"
+        }
+      ],
+      "popup": {
+        "text": "WOW!",
+        "offset": { "x": 0, "y": -100 }
+      }
+    }
+  ]
+}
