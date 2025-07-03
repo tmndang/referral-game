@@ -1,92 +1,102 @@
-```markdown
 # InStep Referral Assessment Game
 
 This project is a web-based "Referral Game" designed to help InStep quickly assess the qualifications of students referred by internal employees or external connections. It provides an interactive flowchart assessment and categorizes resumes based on the student's suitability for the program.
 
 ## Features
 
-* **Interactive Flowchart Assessment:** Guides referrers through a series of qualification questions.
-* **Student Data & Resume Upload:** Collects basic student information and their resume.
-* **Automated Resume Categorization:** Based on assessment score, resumes are automatically moved into "qualified" or "unqualified" folders.
+* **Interactive Flowchart Assessment:** Guides referrers through a series of qualification questions with immediate feedback and early exit conditions.
+* **Student Data & Resume Upload:** Collects basic student information and their resume (PDF, DOC, DOCX).
+* **Automated Resume Categorization:** Based on the assessment score, resumes are automatically moved into "qualified_resumes" or "unqualified_resumes" folders.
 * **Backend Data Storage:** Stores student details, resume paths, and assessment results in an SQLite database.
-* **Recruiter Data Access:** Provides an API endpoint for recruiters to view all referred students and their assessment outcomes.
+* **Recruiter Data Access:** Provides an API endpoint for recruiters to view all referred students and their latest assessment outcomes.
+* **Secure File Serving:** Resumes are served securely from categorized folders.
 
 ## Technologies Used
 
 * **Frontend:** HTML, CSS, JavaScript
 * **Backend:** Python, Flask (web framework), SQLite (database)
-* **Development Tools:** npm/npx (`serve`) for local frontend server
+* **Development Tools:** `serve` (npm package) for local frontend server
 
 ## Project Structure
 
-```
 referral-game/
-├── frontend/             # All user-facing web files
-├── backend/              # Python Flask server and database files
-└── README.md             # This file
-```
+├── app.py                # Flask backend application
+├── database.py           # Database initialization and connection utility
+├── index.html            # Main frontend HTML file
+├── script.js             # Frontend JavaScript logic for the assessment
+└── style.css             # Frontend CSS for styling
+└── uploads/              # Directory for storing resumes (created automatically)
+├── temp_resumes/
+├── qualified_resumes/
+└── unqualified_resumes/
+
 
 ## Setup Instructions
 
 To get this project up and running locally, follow these steps:
 
-1.  **Clone the Repository:**
+1.  **Clone the Repository (or create the files manually):**
+    If you're starting from scratch, create a directory called `referral-game` and place the `app.py`, `database.py`, `index.html`, `script.js`, and `style.css` files directly inside it.
+
     ```bash
+    # If using Git
     git clone [your-repository-url]
     cd referral-game
     ```
 
 2.  **Backend Setup (Python/Flask):**
-    * Navigate into the `backend` directory:
+
+    * **Install Python dependencies:** Ensure you have Python installed. It's highly recommended to use a virtual environment.
         ```bash
-        cd backend
+        # Create a virtual environment (if you don't have one)
+        python -m venv .venv
+
+        # Activate the virtual environment
+        # On macOS/Linux:
+        source .venv/bin/activate
+        # On Windows:
+        .venv\Scripts\activate
+
+        # Install Flask and other required libraries
+        pip install Flask Flask-Cors Werkzeug sqlite3 shutil
         ```
-    * Create the necessary resume storage folders:
+        *Note: `sqlite3` and `shutil` are part of Python's standard library and do not need to be installed via pip.*
+
+    * **Run the Flask server:**
         ```bash
-        mkdir -p uploads/temp_resumes uploads/qualified_resumes uploads/unqualified_resumes
+        # Ensure your virtual environment is activated
+        python app.py
         ```
-    * Install Python dependencies (ensure you have Python installed, preferably using a virtual environment):
-        ```bash
-        # Recommended: Activate your virtual environment if you have one
-        # source .venv/bin/activate
-        pip install -r requirements.txt
-        # If 'pip' command not found, use the full path to your venv's python:
-        # /path/to/your/referral-game/.venv/bin/python -m pip install -r requirements.txt
-        ```
-    * Initialize the database and start the Flask server:
-        ```bash
-        # Ensure you are in the 'backend' directory
-        /path/to/your/referral-game/.venv/bin/python app.py
-        # Or simply: python app.py if your virtual environment is activated
-        ```
-        Keep this terminal window open. The server will run on `http://127.0.0.1:5000` (or `5001` if port 5000 is in use).
+        Keep this terminal window open. The server will start on `http://127.0.0.1:5001`. The `uploads` directory and its subfolders (`temp_resumes`, `qualified_resumes`, `unqualified_resumes`) will be created automatically, and the SQLite database (`referral_game.db`) will be initialized upon the first run of `app.py`.
 
 3.  **Frontend Setup (HTML/CSS/JS):**
+
     * Open a **new** terminal window.
-    * Navigate into the `frontend` directory:
-        ```bash
-        cd frontend
-        ```
-    * Install the `serve` package globally (if you haven't already):
+    * **Install `serve` globally** (if you haven't already):
         ```bash
         npm install -g serve
-        # If EACCES permission denied, you might need to adjust npm permissions or use:
-        # npx serve -p 8000 (skip global install and run this instead of 'serve -p 8000')
+        # If you encounter EACCES permission denied, you might need to adjust npm permissions or use `sudo npm install -g serve`.
+        # Alternatively, you can use `npx serve -p 8000` which runs `serve` without a global install.
         ```
-    * Start the frontend server:
+    * **Start the frontend server:**
+        Navigate to the `referral-game` directory (where your `index.html` resides).
         ```bash
         serve -p 8000
         ```
-        It might choose a different port if 8000 is busy (e.g., `61983`). Note down the `Local` address it provides. Keep this terminal window open.
+        This will serve the static files (HTML, CSS, JS). It might choose a different port if 8000 is busy (e.g., `61983`). Note down the `Local` address it provides. Keep this terminal window open.
 
 ## Usage
 
 1.  **Access the Referral Game:**
-    Open your web browser and go to the `Local` address provided by the frontend server (e.g., `http://localhost:61983`).
-2.  **Submit Referrals:** Follow the on-screen prompts to input student details and complete the assessment quiz.
+    Open your web browser and go to the `Local` address provided by the frontend server (e.g., `http://localhost:8000` or `http://localhost:[YOUR_PORT]`).
+
+2.  **Submit Referrals:**
+    * Click "Start Assessment".
+    * Provide the student's first name, last name, and upload their resume.
+    * Proceed through the interactive flowchart assessment by answering the questions. The assessment includes early exit conditions if a student does not meet core eligibility criteria.
+
 3.  **Access Recruiter Data:**
     In your web browser, you can view the stored student data and assessment results by visiting the backend API endpoint:
-    `http://localhost:5000/api/students_with_assessments` (adjust port if your backend is on 5001).
-    You can also access uploaded resumes directly via a URL like `http://localhost:5000/files/qualified_resumes/your_filename.pdf` (check the `resume_path` in the JSON data for the exact path).
+    `http://localhost:5001/api/students_with_assessments`
 
----
+    You can also access uploaded resumes directly via a URL. The `resume_url` in the JSON data from `students_with_assessments` will provide the direct link, for example: `http://localhost:5001/files/qualified_resumes/firstname_lastname_uniqueid.pdf`.
