@@ -6,6 +6,10 @@ const ctx = canvas.getContext('2d');
 let backgroundImage = new Image();
 backgroundImage.src = '/game/images/backgrounds/defaultBackground.png';
 
+// Question Answer Box (temporary version)
+let qaBox = new Image();
+qaBox.src = '/game/images/qaBoxTemp.png';
+
 // Contains all target objects
 let targets = [];
 let buttons = [];
@@ -87,9 +91,11 @@ class Button {
 	constructor(x, y, str) {
 		this.x = x;
 		this.y = y;
-		this.width = 150;
-		this.height = 50;
+		this.width = 154;
+		this.height = 51;
 		this.str = str;
+		this.sprite = new Image();
+		this.sprite.src = '/game/images/button.png';
 	}
 
 	/*
@@ -97,9 +103,8 @@ class Button {
 	*/
 	draw() {
 		if(currentStatus != "Main Hub") {
-			ctx.fillStyle = "#000328"; // fill color dark blue
-			ctx.fillRect(this.x, this.y, 150, 50); // x, y, width, height
-			drawText(this.x+75,this.y+25,this.str);
+			ctx.drawImage(this.sprite, this.x, this.y, this.width, this.height);
+			drawText(this.x + (this.width / 2), this.y + (this.height / 2) + 3, this.str);
 		}
 	}
 
@@ -125,9 +130,40 @@ class Button {
 */
 function spawnTargets(num) {
 	for(let i = 0; i < num; i++) {
-		// Just picking random (x,y) coordinates
-		const x = Math.random() * (canvas.width - 60) + 30;
-		const y = Math.random() * (canvas.height - 60) + 30;
+		// Setting coordinates to clickable locations on screen
+		let x = -1;
+		let y = -1;
+
+		switch (i){
+			case 0:
+				x = 185;
+				y = 220;
+				break;
+			case 1:
+				x = 257;
+				y = 160;
+				break;
+			case 2:
+				x = 370;
+				y = 150;
+				break;
+			case 3:
+				x = 430;
+				y = 190;
+				break;
+			case 4:
+				x = 530;
+				y = 220;
+				break;
+			case 5:
+				x = 555;
+				y = 270;
+				break;
+			default:
+				x = -1;
+				y = -1;
+				break;
+		}
 
 		// Add to targets array
 		targets.push(new Target(x, y, i));
@@ -148,13 +184,6 @@ function drawText(x, y, str) {
 	ctx.textBaseline = "middle";
 	ctx.strokeText(str, x, y); // draw stroke first otherwise it will overlap text
 	ctx.fillText(str, x, y);
-}
-
-function drawButton(x, y, str) {
-	// Draw rectangle
-	ctx.fillStyle = "#000328"; // fill color dark blue
-	ctx.fillRect(x, y, 150, 50); // x, y, width, height
-	drawText(x+75,y+25,str);
 }
 
 /*
@@ -201,12 +230,18 @@ function gameLoop() {
 		ctx.drawImage(backgroundImage, x, y, newWidth, newHeight);
 	}
 
+	// Draw the QA box
+	if(currentStatus != "Main Hub")
+		ctx.drawImage(qaBox, 505, 170, 250, 218);
+
 	// Draw the targets
 	if(currentStatus == "Main Hub") // targets only appear on the main hub
 	{
+		ctx.globalAlpha = 0.6; // makes all targets 40% transparent
 		for (let i = 0; i < targets.length; i++) {
 			targets[i].draw();
 		}
+		ctx.globalAlpha = 1.0; // reset to 1.0 so the next thing drawn after this isn't transparent
 	}
 
 	// Draw the buttons
@@ -216,7 +251,7 @@ function gameLoop() {
 	}
 
 	// Draw screen text
-	drawText(canvas.width / 2, 40, currentStatus);
+	drawText(canvas.width / 2, 100, currentStatus);
 
 	// Keeps gameLoop running forever. Usually 60 times per second (60 FPS)
 	// Standard way of running a game
@@ -225,5 +260,5 @@ function gameLoop() {
 
 // Spawn the targets, then starts the game
 spawnTargets(6);
-buttons.push(new Button(25, 550, "Back"));
+buttons.push(new Button(25, 430, "Back"));
 gameLoop();
