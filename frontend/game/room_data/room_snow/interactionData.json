@@ -1,0 +1,51 @@
+{
+  "interactions": [
+    {
+      "id": "splatSnowballGround",
+      "trigger": "collision",
+      "groups": ["snowball", "ground"],
+      "condition": {
+        "type": "impactSpeed",
+        "operator": ">=",
+        "value": 4
+      },
+      "actions": [
+        { "type": "removeSelf" }
+      ],
+      "popup": {
+        "text": "POOF!",
+        "offset": { "x": 0, "y": -20 }
+      }
+    },
+    {
+      "id": "splatSnowballTree",
+      "trigger": "collision",
+      "groups": ["snowball", "tree"],
+      "condition": {
+        "type": "impactSpeed",
+        "operator": ">=",
+        "value": 4
+      },
+      "actions": [
+        { "type": "removeSelf" }
+      ],
+      "popup": {
+        "text": "POOF!",
+        "offset": { "x": 0, "y": -20 }
+      }
+    },
+    {
+      "id": "parrotEatHawthorneBerries",
+      "trigger": "collision",
+      "groups": ["hawthorneberries", "YUM_ZONE"],
+      "actions": [
+        { "type": "removeSelf" }
+      ],
+      "popup": {
+        "text": "YUM!",
+        "offset": { "x": 0, "y": 0 }
+      },
+      "emitEvent": "hawthorneBerriesEaten"
+    }
+  ]
+}

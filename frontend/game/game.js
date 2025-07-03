@@ -127,7 +127,7 @@ canvas.style.height = `${gameHeight * scale}px`;
 
 // Set background image. Will be drawn every frame in the gameLoop() function
 let backgroundImage = new Image();
-backgroundImage.src = '/game/images/backgrounds/beachBackground.png';
+backgroundImage.src = '/game/images/backgrounds/bg_title.png';
 
 // Question Answer Box (temporary version)
 let qaBox = new Image();
@@ -141,6 +141,18 @@ explorerTemp.src = '/game/images/explorer.png';
 
 let parrot = new Image();
 parrot.src = '/game/images/parrot.png';
+
+let infosysLogo = new Image();
+infosysLogo.src = '/game/images/title/infosysLogo.png';
+
+let referralGameLogo = new Image();
+referralGameLogo.src = '/game/images/title/referralGameLogo.png';
+
+let hubExplorer = new Image();
+hubExplorer.src = '/game/images/title/hubExplorer.png';
+
+let instructionBox = new Image();
+instructionBox.src = '/game/images/title/instructionBox.png';
 
 // Contains all target objects
 let targets = [];
@@ -167,35 +179,36 @@ class Target {
 	constructor(x, y, challengeNum) {
 		this.x = x;
 		this.y = y;
-		this.width = 60;
-		this.height = 60;
+		this.width = 130; // matches sprite width
+		this.height = 121; // matches sprite height
 		this.challengeNum = challengeNum;
+		this.str = String(challengeNum+1);
 
 		// Create the sprite attribute, setting it to an Image with a .src of a sprite address
 		this.sprite = new Image();
 
+		this.sprite.src = '/game/images/title/numberBox.png';
+
+		/*
 		if(this.challengeNum == 0)
 			this.sprite.src = '/game/images/circles/circleBlue.png'; // leads to first challenge
 		else
 			this.sprite.src = '/game/images/circles/circleRed.png'; // leads nowhere
+		*/
 	}
 
 	/*
 		Draws the Target's current sprite. This is called every frame in the gameLoop() function (standard)
 	*/
-	/*
+	
 	draw() {
-		ctx.drawImage(this.sprite, this.x, this.y, 60, 60);
+		ctx.drawImage(this.sprite, this.x, this.y, this.width, this.height);
+		drawText(this.x + (this.width / 2), this.y + (this.height / 2) + 5, 72, this.str);
 	}
-		*/
 
 	/*
 		Checks if you clicked within the bounds of the Target. This is run
-		by the event listener lower in this script. Below is
-		standard code for checking the click area of a rectangle. The
-		top left of the target is the target's (x,y). Could do a different
-		formula since it's a circle but this is common code that's good
-		to know.
+		by the event listener lower in this script
 	*/
 	checkClick(mouseX, mouseY) {
 		if(mouseX >= this.x
@@ -203,11 +216,19 @@ class Target {
 		&& mouseY >= this.y
 		&& mouseY <= this.y + this.height) {
             // Make Circle Green after being clicked
-            this.sprite.src = '/game/images/circles/circleGreen.png';
+            //this.sprite.src = '/game/images/circles/circleGreen.png';
 
             // One target will change the background image
-            if(this.challengeNum == 0)
-                backgroundImage.src = '/game/images/backgrounds/challenge1.png';
+            if(this.challengeNum == 0) {
+				switchToRoom('room_beach');
+                backgroundImage.src = '/game/images/backgrounds/bg_beach.png';
+			} else if(this.challengeNum == 2) {
+				switchToRoom('room_jungle');
+                backgroundImage.src = '/game/images/backgrounds/bg_jungle.png';
+			} else if(this.challengeNum == 3) {
+				switchToRoom('room_snow');
+                backgroundImage.src = '/game/images/backgrounds/bg_snow.png';
+			}
 			else
 				backgroundImage.src = '';
 
@@ -228,7 +249,7 @@ class Button {
 	constructor(x, y, str) {
 		this.x = x;
 		this.y = y;
-		this.width = 154;
+		this.width = 1390;
 		this.height = 51;
 		this.str = str;
 		this.sprite = new Image();
@@ -241,7 +262,7 @@ class Button {
 	draw() {
 		if(currentStatus != "Main Hub") {
 			ctx.drawImage(this.sprite, this.x, this.y, this.width, this.height);
-			drawText(this.x + (this.width / 2), this.y + (this.height / 2) + 3, this.str);
+			drawText(this.x + (this.width / 2), this.y + (this.height / 2) + 3, 24, this.str);
 		}
 	}
 
@@ -263,14 +284,34 @@ class Button {
 /*
 	Loads a room from a .json file
 */
-async function switchToRoom(filename) {
-  const response = await fetch(`./game/room_data/${filename}`);
+/*
+async function switchToRoom(roomName) {
+  const response = await fetch(`./game/room_data/${roomName}/objectData.json`);
   const json = await response.json();
 
   clearWorld();
   loadRoomFromData(json);
   mouseTools = setupMouse(canvas); // re-run it after loading the new room
 }
+  */
+
+const roomName = 'room_jungle';
+
+import { loadRoomInteractions } from './physics.js';
+
+async function switchToRoom(roomName) {
+  const response = await fetch(`./game/room_data/${roomName}/objectData.json`);
+  const json     = await response.json();
+
+  clearWorld();
+  loadRoomFromData(json);
+
+  // wire collisions for this room
+  await loadRoomInteractions(roomName);
+
+  mouseTools = setupMouse(canvas);
+}
+
 
 
 /*
@@ -286,28 +327,24 @@ function spawnTargets(num) {
 
 		switch (i){
 			case 0:
-				x = 185;
-				y = 220;
+				x = 206;
+				y = 535;
 				break;
 			case 1:
-				x = 257;
-				y = 160;
+				x = 606;
+				y = 320;
 				break;
 			case 2:
-				x = 370;
-				y = 150;
+				x = 924;
+				y = 385;
 				break;
 			case 3:
-				x = 430;
-				y = 190;
+				x = 1329;
+				y = 295;
 				break;
 			case 4:
-				x = 530;
-				y = 220;
-				break;
-			case 5:
-				x = 555;
-				y = 270;
+				x = 1532;
+				y = 507;
 				break;
 			default:
 				x = -1;
@@ -324,14 +361,18 @@ function spawnTargets(num) {
 	Custom function to draw outlined text with HTML5 canvas
 	at coordinates x, y and with text in str argument
 */
-function drawText(x, y, str) {
+function drawText(x, y, fontSize, str) {
 	// Draw text
-	ctx.font = "24px Arial";
+	ctx.font = String(fontSize) + "px Arial";
 	ctx.fillStyle = "white";
 	ctx.textAlign = "center";
 	//ctx.strokeStyle = "black"; // text outline color
 	//ctx.lineWidth = 3; // text outline width
+	ctx.strokeStyle = "black";
+	ctx.lineWidth = fontSize / 4;
 	ctx.textBaseline = "middle";
+	ctx.lineJoin = "round"; // prevent jagged stroke edges
+	ctx.lineCap  = "round"; // prevent jagged stroke edges
 	ctx.strokeText(str, x, y); // draw stroke first otherwise it will overlap text
 	ctx.fillText(str, x, y);
 }
@@ -353,14 +394,13 @@ canvas.addEventListener('click', (e) => {
   const mouseY = (e.clientY - rect.top) * scaleY;
 
   // Now pass these adjusted coordinates to your game logic.
-  /*
   if(currentStatus === "Main Hub") {
     targets.forEach(target => target.checkClick(mouseX, mouseY));
   }
+
   if(currentStatus !== "Main Hub") {
     buttons.forEach(button => button.checkClick(mouseX, mouseY));
   }
-	*/
 });
 
 /*
@@ -390,17 +430,30 @@ function gameLoop() {
 		ctx.drawImage(backgroundImage, x, y, newWidth, newHeight);
 	}
 
-	/*
-	// Draw the targets
+	// Draw Main Hub
 	if(currentStatus == "Main Hub") // targets only appear on the main hub
 	{
-		ctx.globalAlpha = 0.6; // makes all targets 40% transparent
+		// Draw targets
+		//ctx.globalAlpha = 0.6; // makes all targets 40% transparent
 		for (let i = 0; i < targets.length; i++) {
 			targets[i].draw();
 		}
-		ctx.globalAlpha = 1.0; // reset to 1.0 so the next thing drawn after this isn't transparent
+		//ctx.globalAlpha = 1.0; // reset to 1.0 so the next thing drawn after this isn't transparent
+	
+		// Draw Infosys logo
+		ctx.drawImage(infosysLogo, 609, 143, 339, 127);
+
+		// Draw Referral Game logo
+		ctx.drawImage(referralGameLogo, 975, 34, 331, 287);
+
+		// Draw Hub Explorer
+		ctx.drawImage(hubExplorer, 920, 864, 61, 136);
+
+		// Instruction Box
+		ctx.globalAlpha = 0.61;
+		ctx.drawImage(instructionBox, 708, 536, 526, 158);
+		ctx.globalAlpha = 1.0;
 	}
-		*/
 
 	// Draw the buttons
 	if(currentStatus != "Main Hub") // back button only appears on challenge screen
@@ -414,7 +467,7 @@ function gameLoop() {
   	drawPhysicsBodies(ctx);
 
 	// Draw static screen elements
-	if(currentStatus == "Main Hub") // currentStatus is always set to this in this version
+	if(currentStatus != "Main Hub") // currentStatus is always set to this in this version
 	{
 		// Draw questionAnswerBox
 		ctx.drawImage(questionAnswerBoxTemp, 1204, 148, 638, 772)
@@ -461,9 +514,9 @@ function gameLoop() {
 }
 
 // Start game and load room
-//spawnTargets(6);
+spawnTargets(5);
 //buttons.push(new Button(25, 430, "Back"));
 gameLoop();
-switchToRoom('room_beach.json');
+//switchToRoom('room_beach.json');
 
 export { showPopup };

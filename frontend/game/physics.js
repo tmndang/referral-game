@@ -10,7 +10,8 @@ const {
   Events,
   Composite,
   Body,
-  Query
+  Query,
+  Vector
 } = Matter;
 
 let currentRoomData = [];
@@ -21,15 +22,29 @@ export const constraintsList = [];
 // physics.js
 const CATEGORY_DEFAULT = 0x0001;  // everything else
 const CATEGORY_SENSOR  = 0x0002;  // YUM/SPLASH zones
+const CATEGORY_VINE = 0x0004; // Vines
 
+// Negative groups disable collisions within the group
+const CEILING_NONCOLLIDE_GROUP = -2;
 
 // Sandbox started
 let sandboxStarted = false;
 let dragFrameCounter = 0;
 let currentDraggedBody = null;
 
+let monkeyConstraint = null;
+let currentVine = null;
+
+const MAX_TILT = Math.PI / 16;
+
 const gameWidth = 1920;
 const gameHeight = 1080;
+
+// track which vine we’ve latched to, and how we’re rotated relative to it
+let attachedVine      = null;
+let attachOffset      = { x: 0, y: 0 };
+let attachAngleOffset = 0;
+
 
 // Create the physics engine and world.
 export const engine = Engine.create();
@@ -54,6 +69,22 @@ function createBody(data) {
   }
 }
 
+/*
+setInterval(() => {
+  const monk   = bodyMap['monkey'];
+  const vine   = bodyMap['vine1'];
+  const canCollide = Matter.Detector.canCollide(
+    monk.collisionFilter,
+    vine.collisionFilter
+  );
+  console.log('canCollide?', canCollide,
+    ' monk.mask=0x'+monk.collisionFilter.mask.toString(16),
+    ' vine.cat=0x'+vine.collisionFilter.category.toString(16)
+  );
+}, 1000);
+*/
+
+
 export function loadRoomFromData(roomData) {
   currentRoomData = roomData;
 
@@ -62,6 +93,52 @@ export function loadRoomFromData(roomData) {
     // Tag this body with its JSON key for later removeSelf/spawn logic
     body._jsonId = entry.id;
     body.metadata = entry.metadata || {};
+
+    
+    /*
+    // Mouse can't grab it, but can be interacted with otherwise
+    if (entry.metadta?.group === 'monkey'
+      || entry.metadta?.group === 'vine'
+    ) {
+      body.collisionFilter.mask = CATEGORY_VINE;
+    }
+      */
+
+    if (entry.metadata?.group === 'monkey')
+        body.collisionFilter.mask = CATEGORY_VINE;
+
+    // if this object should hang from the ceiling
+    if (entry.metadata?.isRope) {
+      // Can't collide with ceiling
+      //body.collisionFilter.group = CEILING_NONCOLLIDE_GROUP;
+
+          // Mouse can't grab it
+          // add this line:
+      body.collisionFilter.category = CATEGORY_VINE;
+
+      // optionally set the mask too, e.g. to allow monkey collisions
+      body.collisionFilter.mask = CATEGORY_DEFAULT | CATEGORY_SENSOR | CATEGORY_VINE;
+
+      // anchor at the top‐center of your sprite
+      const anchorX = entry.x + entry.width  / 2;
+      const anchorY = entry.y - entry.height / 2;              // top of the sprite
+
+      const pin = Matter.Bodies.circle(anchorX, anchorY, 1, {
+        isStatic: true,
+        collisionFilter: { mask: 0 } // don’t collide with anything
+      });
+      World.add(world, pin);
+
+      const rope = Matter.Constraint.create({
+        bodyA: pin,
+        bodyB: body,
+        pointA: { x: 0, y: 0 },
+        pointB: { x: 0, y: -entry.height / 2 },
+        stiffness: 1.0,     // fully rigid
+        length: 0           // no stretch at all
+      });
+      World.add(world, rope);
+    }
 
     bodyMap[entry.id] = body;
     World.add(world, body);
@@ -76,7 +153,9 @@ export function loadRoomFromData(roomData) {
       Matter.Body.setInertia(body, body.inertia * 40);
     }
 
-    if (!body.isStatic) {
+    
+
+     if (!body.isStatic) {
       const constraint = Constraint.create({
         pointA: { x: body.position.x, y: body.position.y },
         bodyB: body,
@@ -90,9 +169,98 @@ export function loadRoomFromData(roomData) {
       constraintsList.push(constraint);
       World.add(world, constraint);
     }
+
   });
 
   World.add(world, [ground, ceiling, leftWall, rightWall, QABox]);
+
+  // …after you’ve added all bodies (including monkey & vine1)…
+  const monkey = bodyMap['monkey'];
+  const vine1  = bodyMap['vine1'];
+
+  // say your sprite is 256px wide by 512px tall  
+  // and the hands sit 64px from the left edge, 400px down from the top
+  if(monkey)
+    monkey.spriteAnchor = { x: 84, y: 100 };
+
+Events.on(engine, 'afterUpdate', () => {
+  if (!attachedVine) return;
+
+  // get the monkey body
+  const monkey = bodyMap['monkey'];
+  const vine   = attachedVine;
+
+  // 1) position snap (you probably already have this)
+  //const targetPos = Vector.add(vine.position, attachOffset);
+  //Body.setPosition(monkey, targetPos);
+
+  // 1) position snap + extra 100px down the vine
+  const basePos   = Vector.add(vine.position, attachOffset);
+  // rotate a (0,100) vector into world space so “down” follows the vine’s angle
+  //const extra     = Vector.rotate({ x: -40, y: 100 }, vine.angle);
+  const extra     = Vector.rotate({ x: 0, y: 100 });
+  const targetPos = Vector.add(basePos, extra);
+
+ // // if monkey is to the right of the vine, flip its sprite horizontally
+   //monkey.render.sprite.xScale = monkey.position.x > vine.position.x ? -1 : 1;
+
+ // flag for your renderer
+ monkey.isFacingLeft = monkey.position.x > vine.position.x;
+
+  // 2) angle snap: vine.angle + the saved offset
+  const targetAngle = vine.angle /*+ attachAngleOffset*/;
+  Body.setAngle(monkey, targetAngle);
+
+  // zero out any residual spin
+  Body.setAngularVelocity(monkey, 0);
+});
+
+// clamp limits (radians)
+const MAX_VINE_ANGLE =  Math.PI / 2;   // 90°
+const MIN_VINE_ANGLE = -Math.PI / 2;   // ‑90°
+
+Events.on(engine, 'afterUpdate', () => {
+  // for each vine you care about
+  ['vine1', 'vine2', 'vine3'].forEach(id => {
+    const vine = bodyMap[id];
+    if (!vine) return;
+
+    // if it swung too far clockwise…
+    if (vine.angle > MAX_VINE_ANGLE) {
+      Body.setAngle(vine, MAX_VINE_ANGLE);
+      Body.setAngularVelocity(vine, 0);
+    }
+    // if it swung too far counter-clockwise…
+    if (vine.angle < MIN_VINE_ANGLE) {
+      Body.setAngle(vine, MIN_VINE_ANGLE);
+      Body.setAngularVelocity(vine, 0);
+    }
+  });
+});
+
+
+/*
+if (monkey && vine1) {
+  // ← Step 1: compute half‐heights here
+  const monkeyHalfH = (monkey.bounds.max.y - monkey.bounds.min.y) / 2;
+  const vineHalfH   = (vine1 .bounds.max.y - vine1 .bounds.min.y) / 2;
+
+  // now build your “bottom‐of‐vine to top‐of‐monkey” rope
+  if (monkeyConstraint) World.remove(world, monkeyConstraint);
+  monkeyConstraint = Constraint.create({
+    bodyA:  monkey,
+    pointA: { x: 0,            y: -monkeyHalfH },  // top of monkey
+    bodyB:  vine1,
+    pointB: { x: 0,            y:  vineHalfH   },  // bottom of vine
+    length: 100,
+    stiffness: 1.0,
+    damping:   1.0
+  });
+  World.add(world, monkeyConstraint);
+}
+  */
+
+
 
   // 1. Define box’s bounds and make it a sensor
   const yumZoneX      = 1660;
@@ -160,7 +328,15 @@ export function clearWorld() {
 // ***************************************************
 
 // Create the ground.
-export const ground = Bodies.rectangle(960, 1055 + 75, 1920, 300, { isStatic: true });
+export const ground = Bodies.rectangle(960, 1130, 1920, 300, {
+  isStatic: true
+});
+
+// Attach metadata manually
+ground.metadata = {
+  group: "ground"
+};
+
 
 // Variables used to set wall/ceiling coordinates
 const wallThickness = 200;
@@ -173,6 +349,7 @@ const ceiling = Bodies.rectangle(
   200,  // very thick ceiling
   { isStatic: true, label: 'Ceiling' }
 );
+ceiling.collisionFilter.group = CATEGORY_SENSOR;
 
 // Create the left wall.
 const leftWall = Bodies.rectangle(
@@ -304,6 +481,30 @@ export function updatePhysics(delta) {
   // Inside updatePhysics() function — after Engine.update()
   Engine.update(engine, delta);
 
+   if (monkeyConstraint) {
+  const monkey = monkeyConstraint.bodyA;
+  const vine = monkeyConstraint.bodyB;
+
+  // World position of the vine anchor point
+  const vineAnchorWorld = Vector.add(vine.position, monkeyConstraint.pointB);
+
+  /*
+  const leftThreshold = vineAnchorWorld.x - 40;
+  const rightThreshold = vineAnchorWorld.x + 40;
+
+  if (!('isFacingLeft' in monkey)) monkey.isFacingLeft = false;
+
+  if (monkey.position.x < leftThreshold) {
+    monkey.isFacingLeft = true; // face right
+  } else if (monkey.position.x > rightThreshold) {
+    monkey.isFacingLeft = false;  // face left
+  }
+    */
+  // If between leftThreshold and rightThreshold, keep previous facing
+}
+
+
+
   // Objects will wiggle until the user clicks one
   if(sandboxStarted == false) {
       // Apply a gentle wiggle to hovered bodies
@@ -338,6 +539,81 @@ export function updatePhysics(delta) {
   }
 }
 
+/*
+// listen for collisions
+Events.on(engine, 'collisionStart', event => {
+  event.pairs.forEach(pair => {
+    // 1) Identify monkey vs vine
+    let monkeyBody, vineBody;
+
+    if (pair.bodyA._jsonId === 'monkey') {
+      monkeyBody = pair.bodyA; vineBody = pair.bodyB;
+    } else if (pair.bodyB._jsonId === 'monkey') {
+      monkeyBody = pair.bodyB; vineBody = pair.bodyA;
+    } else return;
+
+    if (vineBody.metadata?.group !== 'vine'
+      || (currentVine && vineBody == currentVine)
+    ) return;
+
+    // 2) Clear old constraint
+    if (monkeyConstraint) {
+      let tempVine = currentVine;
+      setTimeout(() => {
+        if (tempVine) {
+          tempVine.collisionFilter.mask = CATEGORY_DEFAULT;
+        }
+      }, 3000);
+
+      World.remove(world, monkeyConstraint);
+      monkeyConstraint = null;
+    }
+
+    currentVine = vineBody;
+    vineBody.collisionFilter.mask = CATEGORY_VINE;
+
+    // 3) Grab the collision support point (world coords)
+    const support = pair.collision.supports[0];
+
+    // 4) Convert that to each body’s local space
+    //const localA = Vector.sub(support, monkeyBody.position);
+   // const localB = Vector.sub(support, vineBody.position);
+
+    // Calculate half height of monkey (approximate hand position)
+    const monkeyHalfHeight = (monkeyBody.bounds.max.y - monkeyBody.bounds.min.y) / 2;
+
+    // Anchor at top-center (hands)
+    const localA = { x: -20, y: -monkeyHalfHeight + 150 };
+
+    // For vine, keep the same relative anchor as collision point
+    const localB = Vector.sub(support, vineBody.position);
+
+
+    // 5) Create a zero‐length constraint at that exact point
+    monkeyConstraint = Constraint.create({
+      bodyA: monkeyBody,
+      pointA: localA,
+      bodyB: vineBody,
+      pointB: localB,
+      length: 0,
+      stiffness: 0.02,
+      damping: 0.1
+    });
+    World.add(world, monkeyConstraint);
+
+    // record the vine we’re on
+    attachedVine = vineBody;
+    // capture how much the monkey was rotated relative to the vine
+    //attachAngleOffset = monkeyBody.angle - vineBody.angle;
+    attachAngleOffset = 0 - vineBody.angle;
+
+  });
+});
+*/
+
+
+
+
 // Draws physics bodies using the provided canvas context.
 export function drawPhysicsBodies(ctx) {
   Object.entries(bodyMap).forEach(([id, body]) => {
@@ -352,15 +628,52 @@ export function drawPhysicsBodies(ctx) {
       if (img && img.complete) {
         const width = img.width;
         const height = img.height;
-        ctx.drawImage(img, -width / 2, -height / 2, width, height);
+
+        // if flagged, flip horizontally
+        if (body.isFacingLeft) {
+          ctx.scale(-1, 1);
+        }
+
+        /*
+        if (id === 'monkey' && body.isFacingLeft) {
+          // Flip horizontally: scale X by -1
+          ctx.scale(-1, 1);
+          // Because we've flipped, we need to adjust drawImage x position:
+          ctx.drawImage(img, -width / 2 * -1, -height / 2, width, height);
+          // Explanation:
+          // - ctx.scale(-1,1) flips horizontally around the origin (which is now at pos.x, pos.y)
+          // - So to draw the image correctly, we invert the x offset sign
+        } else*/ {
+          //ctx.drawImage(img, -width / 2, -height / 2, width, height);
+
+          const anchor = body.spriteAnchor || { x: width/2, y: height/2 };
+            ctx.drawImage(
+              img,
+              -anchor.x,
+              -anchor.y,
+              width,
+              height
+            );
+        }
       }
 
       ctx.restore();
     });
 }
 
-import interactionData from './room_data/interactionData.json' with { type: 'json' };
+
+/*
+import interactionData from './room_data/room_beach/interactionData.json' with { type: 'json' };
 import { wireInteractions } from './interactionManager.js';
 
 // wire up JSON-driven collisions
 wireInteractions(interactionData);
+*/
+
+import { wireInteractions } from './interactionManager.js';
+
+export async function loadRoomInteractions(roomName) {
+  const res  = await fetch(`./game/room_data/${roomName}/interactionData.json`);
+  const data = await res.json();
+  wireInteractions(data);
+}
