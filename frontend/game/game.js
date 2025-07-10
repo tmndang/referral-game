@@ -12,20 +12,6 @@ import {
   loadRoomFromData
 } from './physics.js';
 
-// game.js
-// 1) ESM import for OpenAI
-import OpenAI from 'https://esm.sh/openai@5.8.2';
-
-// 2) Hard‐coded key (testing only)
-const OPENAI_API_KEY = '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';
-
-// 3) Instantiate the client
-// for testing only! this exposes your key to the world
-const openai = new OpenAI({
-  apiKey: OPENAI_API_KEY,
-  dangerouslyAllowBrowser: true
-});
-
 let mainContainer = null;
 let titleContainer = null;
 let startContainer = null;
@@ -91,11 +77,6 @@ function quizStart() {
 	startButton.style.display = 'block';
 	*/
 }
-
-
-
-// 4) Sanity check
-console.log('openai ready?', typeof openai.images.generate === 'function');
 
 
 // Import quiz questions
@@ -746,40 +727,6 @@ function makeSpritePrompt(raw) {
  
 
 
-
-async function generateSprites(roomObjects) {
-  for (const obj of roomObjects) {
-    // Skip if already generated
-    if (obj.spriteUrl) continue;
-
-	//const prompt = makeSpritePrompt(obj.prompt);  // <— use the template
-	//const prompt = "An ultra-high-resolution fine-art painting of a single palm tree, painted with realistic brush strokes and subtle color blending, in a traditional hand-painted style (oil or acrylic), on a fully transparent background, with soft natural lighting and no cartoon or graphic-novel elements";
-
-	//const prompt = "A realistic hand-painted palm tree in a traditional watercolor or acrylic style. The palm tree should have a natural appearance with fine, expressive brush strokes and detailed texture. The fronds are lush green and arch gracefully. The trunk has rich brown tones with visible brushwork. The tree is isolated on a transparent background (checkerboard), with no shadows or additional elements. The style should be artistic and painterly, but not cartoony or simplified.";
-
-	const prompt = "A single, centered palm tree in a clean, minimalist composition, hand-painted in a realistic watercolor or gouache style. The subject is isolated on a neutral or transparent background with no extra elements, shadows, or environment. The painting has natural proportions, soft edges, and subtle brush textures. The style is clean, artistic, and slightly stylized—perfect for a modern 2D mobile game or concept art. Avoid clutter, heavy detail, or cartoon exaggeration."
-	+ "Not cartoon, not clip art, not 3D, not photo, not overly detailed, not complex, not vector, not childish, not surrounded by objects or scenery.";
-
-	//const cartoonPrompt =
-	//'a vibrant, cel-shaded cartoon illustration of ' + obj.prompt;
-
-    // Call DALL·E
-    const res = await openai.images.generate({
-	model:  'dall-e-3',       // ← explicitly use DALL·E 3
-      prompt: prompt,
-      n: 1,
-      size: '1024x1024'
-    });
-    const url = res.data[0].url;
-
-    // Attach URL in-memory
-    obj.spriteUrl = url;
-
-	// ← Log it so you can inspect in DevTools:
-    console.log(`Object ${obj.id} sprite URL:`, obj.spriteUrl);
-  }
-  return roomObjects;
-}
 
 
 /*
