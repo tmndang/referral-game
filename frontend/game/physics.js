@@ -69,20 +69,20 @@ function createBody(data) {
   }
 }
 
-/*
 setInterval(() => {
-  const monk   = bodyMap['monkey'];
-  const vine   = bodyMap['vine1'];
-  const canCollide = Matter.Detector.canCollide(
-    monk.collisionFilter,
-    vine.collisionFilter
-  );
-  console.log('canCollide?', canCollide,
-    ' monk.mask=0x'+monk.collisionFilter.mask.toString(16),
-    ' vine.cat=0x'+vine.collisionFilter.category.toString(16)
-  );
+  if(bodyMap['monkey'] && bodyMap['vine']) {
+    const monk   = bodyMap['monkey'];
+    const vine   = bodyMap['vine1'];
+    const canCollide = Matter.Detector.canCollide(
+      monk.collisionFilter,
+      vine.collisionFilter
+    );
+    console.log('canCollide?', canCollide,
+      ' monk.mask=0x'+monk.collisionFilter.mask.toString(16),
+      ' vine.cat=0x'+vine.collisionFilter.category.toString(16)
+    );
+  }
 }, 1000);
-*/
 
 
 export function loadRoomFromData(roomData) {
@@ -184,7 +184,7 @@ export function loadRoomFromData(roomData) {
     monkey.spriteAnchor = { x: 84, y: 100 };
 
 Events.on(engine, 'afterUpdate', () => {
-  if (!attachedVine) return;
+  if (!attachedVine || !(bodyMap['monkey'])) return;
 
   // get the monkey body
   const monkey = bodyMap['monkey'];
@@ -308,8 +308,28 @@ if (monkey && vine1) {
   World.add(world, splashZone);
   bodyMap['SPLASH_ZONE'] = splashZone;
 
-}
+  // ****************************************************
+  // ***************** Volcano Sensor Zone ***************
+  // ****************************************************
+  const volcanoZone = Bodies.rectangle(
+    874,       // x center (tweak as needed)
+    325,       // y center (tweak as needed)
+    83,      // width
+    30,       // height
+    {
+      isStatic: true,
+      isSensor: true,
+      label: 'VOLCANO_ZONE',
+      collisionFilter: {
+        category: CATEGORY_SENSOR
+      }
+    }
+  );
+  volcanoZone.metadata = { group: 'VOLCANO_ZONE' };
+  World.add(world, volcanoZone);
+  bodyMap['VOLCANO_ZONE'] = volcanoZone;
 
+}
 
 
 export function clearWorld() {
@@ -412,6 +432,10 @@ export function setupMouse(canvas) {
 
 Matter.Events.on(mouseConstraint, 'startdrag', function (event) {
   const body = event.body;
+  if (body?.metadata?.clickable === false) {
+      mouseConstraint.constraint.bodyB = null;
+    }
+
   if (body && !body.isStatic) {
     currentDraggedBody = body;
   }
@@ -539,7 +563,7 @@ export function updatePhysics(delta) {
   }
 }
 
-/*
+
 // listen for collisions
 Events.on(engine, 'collisionStart', event => {
   event.pairs.forEach(pair => {
@@ -609,43 +633,47 @@ Events.on(engine, 'collisionStart', event => {
 
   });
 });
-*/
 
 
 
 
-// Draws physics bodies using the provided canvas context.
+    
+
 export function drawPhysicsBodies(ctx) {
-  Object.entries(bodyMap).forEach(([id, body]) => {
-      const img = imageMap[id];
-      const pos = body.position;
+  Object.values(bodyMap).forEach(body => {
+    const img  = imageMap[body._jsonId];
+    const pos = body.position;
       const angle = body.angle;
+    if (!img || !img.complete) return;
 
-      ctx.save();
-      ctx.translate(pos.x, pos.y);
+    const { x, y }  = body.position;
+    const width     = img.width;
+    const height    = img.height;
+    const anchor    = body.spriteAnchor || { x: width/2, y: height/2 };
+
+    ctx.save();
+    
+
+    // LIZARD (group 'npc'): no rotation, flip left/right by velocity.x
+    if (body.metadata.group === 'lavalizard') {
+      ctx.translate(x, y);
+      const dir = body.velocity.x < 0 ? -1 : 1;
+      ctx.scale(dir, 1);
+      ctx.drawImage(img, -anchor.x, -anchor.y, width, height);
+      ctx.restore();
+      return;
+    }
+
+    // ALL OTHER BODIES: default rotate-and-draw
+    ctx.translate(pos.x, pos.y);
       ctx.rotate(angle);
-
-      if (img && img.complete) {
-        const width = img.width;
-        const height = img.height;
-
-        // if flagged, flip horizontally
-        if (body.isFacingLeft) {
+    //ctx.translate(x, y);
+    //ctx.rotate(body.angle);
+    if (body.isFacingLeft) {
           ctx.scale(-1, 1);
         }
 
-        /*
-        if (id === 'monkey' && body.isFacingLeft) {
-          // Flip horizontally: scale X by -1
-          ctx.scale(-1, 1);
-          // Because we've flipped, we need to adjust drawImage x position:
-          ctx.drawImage(img, -width / 2 * -1, -height / 2, width, height);
-          // Explanation:
-          // - ctx.scale(-1,1) flips horizontally around the origin (which is now at pos.x, pos.y)
-          // - So to draw the image correctly, we invert the x offset sign
-        } else*/ {
-          //ctx.drawImage(img, -width / 2, -height / 2, width, height);
-
+         {
           const anchor = body.spriteAnchor || { x: width/2, y: height/2 };
             ctx.drawImage(
               img,
@@ -655,10 +683,8 @@ export function drawPhysicsBodies(ctx) {
               height
             );
         }
-      }
-
-      ctx.restore();
-    });
+    ctx.restore();
+  });
 }
 
 

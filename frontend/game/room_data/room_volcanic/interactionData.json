@@ -1,0 +1,265 @@
+{
+  "interactions": [
+    {
+        "id": "crackTwoRocks",
+        "trigger": "collision",
+        "groups": ["rock"],
+        "condition": {
+            "type": "impactSpeed",
+            "operator": ">=",
+            "value": 10
+        },
+        "actions": [
+            { "type": "removeSelf" },
+            { "type": "removeOther" },
+            {
+            "type": "spawn",
+            "target": "self",
+            "newId": "{id}_geode_{timestamp}",
+            "shape": "circle",
+            "radius": 42,
+            "options": {
+                "restitution": 0.4,
+                "render": {
+                "sprite": {
+                    "texture": "/game/images/matterObjectSprites/room_volcanic/{id}_geode.png"
+                }
+                }
+            },
+            "metadata": { "group": "geode" },
+            "texture": "/game/images/matterObjectSprites/room_volcanic/{id}_geode.png"
+            },
+            {
+            "type": "spawn",
+            "target": "other",
+            "newId": "{id}_geode_{timestamp}",
+            "shape": "circle",
+            "radius": 42,
+            "options": {
+                "restitution": 0.4,
+                "render": {
+                    "sprite": {
+                    "texture": "/game/images/matterObjectSprites/room_volcanic/{id}_geode.png"
+                    }
+                }
+            },
+            "metadata": { "group": "geode" },
+            "texture": "/game/images/matterObjectSprites/room_volcanic/{id}_geode.png"
+            }
+        ],
+        "popup": {
+            "text": "CRACK!",
+            "offset": { "x": 0, "y": -20 }
+        }
+    },
+    {
+      "id": "crackRockAgainstGeode",
+      "trigger": "collision",
+      "groups": ["rock", "geode"],
+      "condition": {
+        "type": "impactSpeed",
+        "operator": ">=",
+        "value": 10
+      },
+      "actions": [
+        { "type": "removeSelf" },
+        {
+          "type": "spawn",
+          "newId": "geode_{timestamp}",
+          "shape": "circle",
+          "x": "{self.x}",
+          "y": "{self.y}",
+          "radius": 32,
+          "options": {
+            "restitution": 0.4,
+            "render": {
+              "sprite": {
+                "texture": "/game/images/matterObjectSprites/room_volcanic/{id}_geode.png"
+              }
+            }
+          },
+          "metadata": { "group": "geode" },
+          "texture": "/game/images/matterObjectSprites/room_volcanic/{id}_geode.png"
+        }
+      ],
+      "popup": {
+        "text": "CRACK!",
+        "offset": { "x": 0, "y": -20 }
+      }
+    },
+    {
+        "id": "spawnLavaLizardOnce",
+        "trigger": "cluster",
+        "groups": ["geode"],
+        "minCount": 1,
+        "xTolerance": 10000,
+        "stillThreshold": 10000,
+        "actions": [
+            {
+            "type": "spawn",
+            "newId": "lavaLizard",
+            "shape": "rectangle",
+            "width": 75,
+            "height": 37,
+            "options": {
+                "isStatic": false,
+                "render": {
+                "sprite": {
+                    "texture": "/game/images/matterObjectSprites/room_volcanic/lavaLizard.png"
+                }
+                }
+            },
+            "metadata": { "group": "lavalizard", "clickable": false },
+            "texture": "/game/images/matterObjectSprites/room_volcanic/lavaLizard.png"
+            }
+        ],
+        "popup": {
+            "text": "SKREE!",
+            "offset": { "x": 0, "y": -40 }
+        }
+    },
+    {
+        "id": "lizardFollowGeode",
+        "trigger": "update",
+        "groups": ["lavalizard"],
+        "actions": [
+            {
+            "type":         "follow",
+            "targetGroup":  "geode",
+            "speed":        2,
+            "stopDistance": 100
+            }
+        ]
+    },
+    {
+      "id": "eatFireweed",
+      "trigger": "collision",
+      "groups": ["fireweed", "lavalizard"],
+      "condition": {
+        "type": "impactSpeed",
+        "operator": ">=",
+        "value": 0
+      },
+      "actions": [
+        { "type": "removeSelf" }
+      ],
+      "popup": {
+        "text": "YUM!",
+        "offset": { "x": 0, "y": -20 }
+      }
+    },
+    {
+      "id": "revealDragonEgg1",
+      "trigger": "collision",
+      "groups": ["specialRock", "rock"],
+      "condition": {
+        "type": "impactSpeed",
+        "operator": ">=",
+        "value": 10
+      },
+      "actions": [
+        { "type": "removeSelf" },
+        {
+          "type": "spawn",
+          "newId": "dragonEgg_{timestamp}",
+          "shape": "circle",
+          "x": "{self.x}",
+          "y": "{self.y}",
+          "radius": 32,
+          "options": {
+            "restitution": 0.4,
+            "render": {
+              "sprite": {
+                "texture": "/game/images/matterObjectSprites/room_volcanic/dragonEgg.png"
+              }
+            }
+          },
+          "metadata": { "group": "dragonegg" },
+          "texture": "/game/images/matterObjectSprites/room_volcanic/dragonEgg.png"
+        }
+      ],
+      "popup": {
+        "text": "CRACK!",
+        "offset": { "x": 0, "y": -20 }
+      }
+    },
+    {
+      "id": "revealDragonEgg2",
+      "trigger": "collision",
+      "groups": ["specialRock", "geode"],
+      "condition": {
+        "type": "impactSpeed",
+        "operator": ">=",
+        "value": 10
+      },
+      "actions": [
+        { "type": "removeSelf" },
+        {
+          "type": "spawn",
+          "newId": "dragonEgg_{timestamp}",
+          "shape": "circle",
+          "x": "{self.x}",
+          "y": "{self.y}",
+          "radius": 32,
+          "options": {
+            "restitution": 0.4,
+            "render": {
+              "sprite": {
+                "texture": "/game/images/matterObjectSprites/room_volcanic/dragonEgg.png"
+              }
+            }
+          },
+          "metadata": { "group": "dragonegg" },
+          "texture": "/game/images/matterObjectSprites/room_volcanic/dragonEgg.png"
+        }
+      ],
+      "popup": {
+        "text": "CRACK!",
+        "offset": { "x": 0, "y": -20 }
+      }
+    },
+    {
+        "id": "spawnDragonFromEgg",
+        "trigger": "collision",
+        "groups": ["VOLCANO_ZONE","dragonegg"],
+        "actions": [
+            { "type": "removeOther" },
+            {
+            "type":       "spawn",
+            "newId":      "dragon_{timestamp}",
+            "shape":      "rectangle",
+            "width":      128,
+            "height":     128,
+            "options": {
+                "isStatic": false,
+                "collisionFilter": { "mask": 0 },
+                "render": {
+                "sprite": {
+                    "texture": "/game/images/matterObjectSprites/room_volcanic/dragon.png"
+                }
+                }
+            },
+            "metadata": { "group": "dragon", "clickable": false },
+            "texture": "/game/images/matterObjectSprites/room_volcanic/dragon.png"
+            }
+        ],
+        "popup": {
+            "text": "GRARR!",
+            "offset": { "x": 0, "y": -20 }
+        }
+    },
+    {
+        "id": "dragonFlyOff",
+        "trigger": "update",
+        "groups": ["dragon"],
+        "actions": [
+            {
+            "type":       "flyOff",
+            "speedX":     3,
+            "amplitude":  2,
+            "frequency":  0.5
+            }
+        ]
+    }
+  ]
+}

@@ -5,13 +5,22 @@ import { showPopup } from '../game/game.js';
 import { bodyMap, imageMap, engine } from './physics.js';
 
 // Pull in only the Matter APIs we need
-const { World, Bodies, Events } = Matter;
+//const { World, Bodies, Events } = Matter;
+const { World, Bodies, Events, Body, Vector, Constraint } = Matter;
+
+
+// Replace placeholders like {group} and {timestamp}
+function interp(str, ctx) {
+  return str.replace(/\{(\w+)\}/g, (_, key) => ctx[key] || '');
+}
+
 
 // Entry point: wire up JSON-driven interactions
 export function wireInteractions(gameData) {
   const rules      = gameData.interactions;
   const collision  = [];
   const clustering = [];
+  const updates    = [];
 
   // 1. Compile raw JSON rules into richer helper objects
   const compiledRules = rules.map(rule => compileRule(rule));
@@ -20,6 +29,7 @@ export function wireInteractions(gameData) {
   for (const r of compiledRules) {
     if (r.trigger === 'collision') collision.push(r);
     else if (r.trigger === 'cluster') clustering.push(r);
+    else if (r.trigger === "update")    updates.push(r);
   }
 
   // 3. Register collision handler
@@ -27,6 +37,8 @@ export function wireInteractions(gameData) {
 
   // 4. Register clustering handler
   Events.on(engine, 'afterUpdate',  handleClustering(clustering));
+
+  Events.on(engine, "afterUpdate",   handleUpdates(updates));
 }
 
 /*─────────────────── Helper: Compile a Rule ───────────────────*/
@@ -75,7 +87,10 @@ function compileRule(rule) {
           removeBody(other);
         }
         else if (act.type === 'spawn') {
-          spawnBody(self.position, act);
+          // decide which body to use based on act.target
+          const targetBody = act.target === 'other' ? other : self;
+          spawnBody(targetBody.position, act, targetBody);
+          //spawnBody(self.position, act);
         }
         else if (act.type === 'cling') {
         // 1) pull support‐point from the collision pair
@@ -205,6 +220,81 @@ function handleClustering(clusterRules) {
   };
 }
 
+function handleUpdates(updateRules) {
+  return () => {
+    // For each rule, run through all “self” bodies (lavaLizard)
+    for (const rule of updateRules) {
+      // gather movers
+      const movers = Object.values(bodyMap)
+        .filter(b => b.metadata?.group === rule.groups[0]);
+
+      // for each follow‐action on that rule...
+      //for (const act of rule.actions) {
+        //if (act.type !== "follow") continue;
+
+      for (const act of rule.actions) {
+        if (act.type === "follow") {
+          // … your existing follow logic …
+        }
+        else if (act.type === "flyOff") {
+          // ← INSERT the flyOff code here:
+          for (const m of movers) {
+            const now = Date.now();
+            const dt  = (now - (m.metadata.spawnTime || now)) / 1000;
+
+            const vx = -act.speedX;
+            const vy = act.amplitude
+                      * Math.sin(2 * Math.PI * act.frequency * dt);
+
+            Body.setVelocity(m, { x: vx, y: vy });
+            if (m.position.x < -100) removeBody(m);
+          }
+        }
+
+        for (const m of movers) {
+          // find nearest geode
+          const geodes = Object.values(bodyMap)
+            .filter(b => b.metadata?.group === act.targetGroup);
+          if (geodes.length === 0) continue;
+
+          let nearest = geodes[0];
+          let bestD = Infinity;
+          geodes.forEach(g => {
+            const dx = g.position.x - m.position.x;
+            const dy = g.position.y - m.position.y;
+            const d  = Math.hypot(dx, dy);
+            if (d < bestD) { bestD = d; nearest = g; }
+          });
+
+          // if already close enough, zero‐out
+          if (bestD <= act.stopDistance) {
+            Body.setVelocity(m, { x: 0, y: 0 });
+            continue;
+          }
+
+          // otherwise, head toward it at the given speed
+          const vx = ((nearest.position.x - m.position.x) / bestD) * act.speed;
+          const vy = ((nearest.position.y - m.position.y) / bestD) * act.speed;
+          Body.setVelocity(m, { x: vx, y: vy });
+
+          const horizonY = 520; // can't go above horizon
+
+          // 1. Clamp above horizon
+          if (m.position.y < horizonY) {
+            Body.setPosition(m, { x: m.position.x, y: horizonY });
+            Body.setVelocity(m, { x: vx, y: 0 });  // cancel any upward motion
+          }
+
+          // 2. Keep it upright
+          Body.setAngle(m, 0);
+          Body.setAngularVelocity(m, 0);
+        }
+      }
+    }
+  };
+}
+
+
 
 /*────────────────── Utility Functions ──────────────────*/
 
@@ -232,28 +322,47 @@ function removeBody(body) {
   delete imageMap[body._jsonId];
 }
 
-// Spawn a single body at a given position based on an action
-function spawnBody(position, act) {
-  const { x, y } = position;
-  let nb;
+// Spawn a single body at a given position, interpolating placeholders
+ function spawnBody(position, act, originBody) {
+   const { x, y } = position;
+   // build interpolation context
+   const ctx = {
+    id:        originBody._jsonId,        // <-- expose the rock’s own ID
+    timestamp: Date.now().toString()
+   };
 
-  if (act.shape === 'circle') {
-    nb = Bodies.circle(x, y, act.radius, act.options);
-  } else {
-    nb = Bodies.rectangle(x, y, act.width, act.height, act.options);
+   // interpolate newId and texture
+   const id      = interp(act.newId, ctx);
+   const texture = act.texture && interp(act.texture, ctx);
+
+   // create the Matter body
+   let nb;
+   if (act.shape === 'circle') {
+     nb = Bodies.circle(x, y, act.radius, act.options);
+   } else {
+     nb = Bodies.rectangle(x, y, act.width, act.height, act.options);
+   }
+
+   // assign JSON ID, metadata, and add to world & maps
+   nb._jsonId  = id;
+   nb.metadata = act.metadata;
+
+   // keep track of when this dragon was born
+  if (act.metadata.group === 'dragon') {
+    nb.metadata.spawnTime = Date.now();
   }
 
-  nb._jsonId  = act.newId.replace('{timestamp}', Date.now());
-  nb.metadata = act.metadata;
-  bodyMap[nb._jsonId] = nb;
-  World.add(engine.world, nb);
+   bodyMap[id] = nb;
+   World.add(engine.world, nb);
 
-  if (act.texture) {
-    const img = new Image();
-    img.src = act.texture;
-    img.onload = () => { imageMap[nb._jsonId] = img; };
-  }
-}
+
+   // load sprite if provided
+   if (texture) {
+     const img = new Image();
+     img.src = texture;
+     img.onload = () => { imageMap[id] = img; };
+   }
+ }
 
 // Compute average center of an array of bodies
 function computeCenter(bodies) {

@@ -1,0 +1,12 @@
+[
+  {
+    "id": "horse",
+    "prompt": "generate a detailed hand-painted horse facing left for a mobile game over a transparent background. it should not be cartooney. it should be hand-painted.",
+    "spritePath": ""
+  },
+  {
+    "id": "palmTree",
+    "prompt": "generate a hand-painted palm tree over a transparent background. it should not be cartooney. it should be hand-painted",
+    "spritePath": ""
+  }
+]

@@ -2,40 +2,36 @@
 ------Basic Point & Click------
 -------------------------------
 
-Rough mockup of a Point & Click game using HTML5 Canvas, using the canvas element in HTML and JAvaScript for game logic. Game creates six "targets" instantiated from a Target class. User can click on each TArget to turn it green. ONe TArget (that is blue) will take the user to another "location when clicked. REferesh if you don't see the blue one. Background sprites are stretched at the moment... this is just a mockup! THis is just to show how drawing sprites and point & click code works.
+This README.md is in progress.
 
--------------------------------------------------
-------Requirements (for Visual Studio Code)------
--------------------------------------------------
+Note that this project is in progress.
 
-"Live Server" Extension - Click "Go Live" to run the game in your browser.
+Project Status:
 
-------------------------
-------How it Works------
-------------------------
+This version of the app (that includes the "Point & Click" adventure game) will be pushed to a separate branch. The "main" branch (at https://github.com/tmndang/referral-game) will be modified to contain the Quiz-only version that does not have the themed Point & Click adventure game aspects.
 
-• index.html creates a canvas element which is where the game will be drawn. It will be of size 800x600.
-• index.html runs game.js which starts the game.
-• game.js runs the game, code-specific comments in that script
+Quiz-only version will likely be integrated into training systems. Status of "Point & Click" adventure game remains undetermined as of this build. It may be hosted separately for private linking. The "Point & Click" game needs QA testing, comment cleanup, and better modularization of some code. The intern will determine the status and viability of the "Point & Click" game being hosted for private linking. In the meantime, the intern will focus on the "Quiz-only" version's integration and implementation, as well as the "Resume Parser" project.
 
------------------------
-------Other Notes------
------------------------
+Summary:
 
-Canvas is pretty basic, but is a good way to learn basic OOP concepts. We can always use a more complex framework if we feel we need more features at some point.
+This is the README.md for the "Point & Click" game. By following the instructions in the project root's README.md (not the file you are currently reading), you can run the game.
 
-------------------------------------------
------Suggested Videos (if necessary)------
-------------------------------------------
+The game allows the player to progress through applicant referral quiz questions. If they are rejected, they start over. If they are an acceptable candidate for InStep, the user can enter the applicant's name and upload their resume. The resume is submitted to the same backend that the quiz uses.
 
-I haven't gotten a chance to watch the series below but the first 4 videos look like they would be helpful for using canvas. Drawing shapes, drawing sprites, and clicking/event listeners are very important for oOOP game design.
+To skip the game and go directly to the quiz (which uses the same backend), click the "Skip Game" button in the bottom-right corner of the screen.
 
-"Drawing on HTML5 Canvas for Complete Beginners":
+Files:
 
-https://www.youtube.com/watch?v=EO6OkltgudE&list=PLpPnRKq7eNW3We9VdCfx9fprhqXHwTPXL
+index.html - loads Canvas, Matter.js, and Physics.js
+game.js - Contains game logic
+physics.js - Starts and runs Matter.js physics engine
+interactionManager.js - Contains logic for Matter.js object collisions and interactions
+room_data - Contains a folder for each scene/room (beach/volcanic/etc.)
+room_data/[room_name] - Contains data for all objects and their interactions in two JSON files
+quiz_logic/quizData.js - Contains quiz logic that is interpreted by game.js to follow applicant quiz requirements
 
-I am not sure if those videos cover objects/classes, so this is a quick way to learn more about them in JavaScript if you need it:
+Image Assets:
 
-"Learn JavaScript CLASSES in 6 minutes!":
-
-https://www.youtube.com/watch?v=U2vxAEiaVRY
+• The Infosys® logo is a registered trademark of Infosys®.
+• The Beach, Jungle, Snow, and Ruins backgrounds were purchased from the Unity Asset Store with a multi-seat license. Order # 5773906105244.
+• All other art, objects, and backgrounds were generated with OpenAI. These assets are not protected by copyright and may be used freely. No human authorship is claimed. "Microsoft is announcing our new Copilot Copyright Commitment. As customers ask whether they can use Microsoft’s Copilot services and the output they generate without worrying about copyright claims, we are providing a straightforward answer: yes, you can, and if you are challenged on copyright grounds, we will assume responsibility for the potential legal risks involved." https://blogs.microsoft.com/on-the-issues/2023/09/07/copilot-copyright-commitment-ai-legal-concerns/

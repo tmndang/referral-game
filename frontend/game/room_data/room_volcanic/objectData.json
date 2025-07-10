@@ -1,0 +1,243 @@
+[
+  {
+    "id": "tree1",
+    "type": "rectangle",
+    "x": 324,
+    "y": 585,
+    "width": 10,
+    "height": 180,
+    "options": {
+        "isStatic": true,
+      "render": {
+        "sprite": {
+          "texture": "/game/images/matterObjectSprites/room_volcanic/tree1.png"
+        }
+      }
+    },
+    "metadata": {
+        "group": "tree"
+    }
+  },
+  {
+    "id": "tree2",
+    "type": "rectangle",
+    "x": 628,
+    "y": 582,
+    "width": 10,
+    "height": 107,
+    "options": {
+        "isStatic": true,
+      "render": {
+        "sprite": {
+          "texture": "/game/images/matterObjectSprites/room_volcanic/tree2.png"
+        }
+      }
+    },
+    "metadata": {
+        "group": "tree"
+    }
+  },
+  {
+    "id": "tree3",
+    "type": "rectangle",
+    "x": 1076,
+    "y": 641,
+    "width": 30,
+    "height": 341,
+    "options": {
+        "isStatic": true,
+      "render": {
+        "sprite": {
+          "texture": "/game/images/matterObjectSprites/room_volcanic/tree3.png"
+        }
+      }
+    },
+    "metadata": {
+        "group": "tree"
+    }
+  },
+  {
+    "id": "rock1",
+    "type": "rectangle",
+    "x": 285,
+    "y": 654,
+    "width": 35,
+    "height": 35,
+    "options": {
+      "render": {
+        "sprite": {
+          "texture": "/game/images/matterObjectSprites/room_volcanic/rock1.png"
+        }
+      }
+    },
+    "metadata": {
+        "group": "rock"
+    }
+  },
+  {
+    "id": "rock2",
+    "type": "rectangle",
+    "x": 447,
+    "y": 938,
+    "width": 197,
+    "height": 156,
+    "options": {
+      "render": {
+        "sprite": {
+          "texture": "/game/images/matterObjectSprites/room_volcanic/rock2.png"
+        }
+      }
+    },
+    "metadata": {
+        "group": "rock"
+    }
+  },
+  {
+    "id": "rock3",
+    "type": "rectangle",
+    "x": 755,
+    "y": 837,
+    "width": 70,
+    "height": 57,
+    "options": {
+      "render": {
+        "sprite": {
+          "texture": "/game/images/matterObjectSprites/room_volcanic/rock3.png"
+        }
+      }
+    },
+    "metadata": {
+        "group": "rock"
+    }
+  },
+  {
+    "id": "rock4",
+    "type": "rectangle",
+    "x": 891,
+    "y": 783,
+    "width": 53,
+    "height": 43,
+    "options": {
+      "render": {
+        "sprite": {
+          "texture": "/game/images/matterObjectSprites/room_volcanic/rock4.png"
+        }
+      }
+    },
+    "metadata": {
+        "group": "rock"
+    }
+  },
+  {
+    "id": "rock5",
+    "type": "rectangle",
+    "x": 1658,
+    "y": 1012,
+    "width": 125,
+    "height": 111,
+    "options": {
+      "render": {
+        "sprite": {
+          "texture": "/game/images/matterObjectSprites/room_volcanic/rock5.png"
+        }
+      }
+    },
+    "metadata": {
+        "group": "rock"
+    }
+  },
+  {
+    "id": "rock6",
+    "type": "rectangle",
+    "x": 1897,
+    "y": 743,
+    "width": 67,
+    "height": 45,
+    "options": {
+      "render": {
+        "sprite": {
+          "texture": "/game/images/matterObjectSprites/room_volcanic/rock6.png"
+        }
+      }
+    },
+    "metadata": {
+        "group": "specialRock"
+    }
+  },
+  {
+    "id": "fireweed1",
+    "type": "rectangle",
+    "x": 363,
+    "y": 825,
+    "width": 20,
+    "height": 43,
+    "options": {
+        "isStatic": true,
+      "render": {
+        "sprite": {
+          "texture": "/game/images/matterObjectSprites/room_volcanic/fireweed1.png"
+        }
+      }
+    },
+    "metadata": {
+        "group": "fireweed"
+    }
+  },
+  {
+    "id": "fireweed2",
+    "type": "rectangle",
+    "x": 568,
+    "y": 971,
+    "width": 23,
+    "height": 74,
+    "options": {
+        "isStatic": true,
+      "render": {
+        "sprite": {
+          "texture": "/game/images/matterObjectSprites/room_volcanic/fireweed2.png"
+        }
+      }
+    },
+    "metadata": {
+        "group": "fireweed"
+    }
+  },
+  {
+    "id": "fireweed3",
+    "type": "rectangle",
+    "x": 1153,
+    "y": 640,
+    "width": 12,
+    "height": 29,
+    "options": {
+        "isStatic": true,
+      "render": {
+        "sprite": {
+          "texture": "/game/images/matterObjectSprites/room_volcanic/fireweed3.png"
+        }
+      }
+    },
+    "metadata": {
+        "group": "fireweed"
+    }
+  },
+  {
+    "id": "fireweed4",
+    "type": "rectangle",
+    "x": 1849,
+    "y": 844,
+    "width": 19,
+    "height": 52,
+    "options": {
+        "isStatic": true,
+      "render": {
+        "sprite": {
+          "texture": "/game/images/matterObjectSprites/room_volcanic/fireweed4.png"
+        }
+      }
+    },
+    "metadata": {
+        "group": "fireweed"
+    }
+  }
+]

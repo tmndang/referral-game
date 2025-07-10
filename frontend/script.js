@@ -14,7 +14,7 @@ document.addEventListener('DOMContentLoaded', () => {
             id: 'q1',
             question: "Is this person currently enrolled in school?",
             options: [
-                { text: "Yes", score: 1, nextQuestion: 'q2' },
+                { text: "Yes", score: 1, nextQuestion: 'q2', nextGameLevel: true },
                 {
                     text: "No",
                     score: -12,
@@ -28,23 +28,23 @@ document.addEventListener('DOMContentLoaded', () => {
             id: 'q2',
             question: "Does the student have permanent US work authorization? (CPT/OPT/F1 is not permanent)",
             options: [
-                { text: "Yes", score: 1, nextQuestion: 'q3' },
-                { text: "No", score: -12, nextQuestion: null, endQuiz: true, message: "The InStep program requires permanent US work authorization." } // Added early exit for No
+                { text: "Yes", score: 1, nextQuestion: 'q3', nextGameLevel: true },
+                { text: "No", score: 1, nextQuestion: 'q7', nextGameLevel: true }
             ]
         },
         {
             id: 'q3',
             question: "Is the student currently in their third year (junior year) of undergraduate studies?",
             options: [
-                { text: "Yes", score: 1, nextQuestion: 'q4' },
-                { text: "No", score: -12, nextQuestion: null, endQuiz: true, message: "The InStep program primarily targets third-year undergraduate students." } // Added early exit for No
+                { text: "Yes", score: 1, nextQuestion: 'q4', nextGameLevel: true },
+                { text: "No", score: 1, nextQuestion: 'q7', nextGameLevel: true } // students from eligible schools can circumvent (according to flow chart)
             ]
         },
         {
             id: 'q4',
             question: "Is the student pursuing a degree in computer science, computer engineering, data science, or some other related technical field?",
             options: [
-                { text: "Yes", score: 1, nextQuestion: 'q7' },
+                { text: "Yes", score: 1, nextQuestion: 'q7', nextGameLevel: true },
                 { text: "No", score: 1, nextQuestion: 'q5' }
             ]
         },
@@ -52,13 +52,13 @@ document.addEventListener('DOMContentLoaded', () => {
             id: 'q5',
             question: "Is the student pursuing a degree in Business Analytics?",
             options: [
-                { text: "Yes", score: 1, nextQuestion: 'q6' },
+                { text: "Yes", score: 1, nextQuestion: 'q6', nextGameLevel: true },
                 {
                     text: "No",
                     score: -12,
                     nextQuestion: null,
                     endQuiz: true,
-                    message: "A degree in Business Analytics is a core requirement for this InStep position to ensure alignment with the program's objectives. This student's academic background does not appear to meet that specific criterion."
+                    message: "A degree in Computer Science, Computer Engineering, Data Science, or Business Analytics is a core requirement for this InStep position to ensure alignment with the program's objectives. This student's academic background does not appear to meet that specific criterion."
                 }
             ]
         },
@@ -66,7 +66,7 @@ document.addEventListener('DOMContentLoaded', () => {
             id: 'q6',
             question: "Does this student live within one hour of the Hartford hub? (Hartford, Raleigh, Indianapolis, Richardson, Tempe, or Bridegewater)",
             options: [
-                { text: "Yes", score: 1, nextQuestion: null },
+                { text: "Yes", score: 1, nextQuestion: null, endQuiz: true },
                 {
                     text: "No",
                     score: -12,
@@ -78,7 +78,7 @@ document.addEventListener('DOMContentLoaded', () => {
         },
         {
             id: 'q7',
-            question: "Which University does the student attend?",
+            question: "Select which school the student attends",
             options: [
                 { text: "Harvard", score: 1, nextQuestion: 'q8' },
                 { text: "Stanford", score: 1, nextQuestion: 'q8' },
@@ -102,29 +102,34 @@ document.addEventListener('DOMContentLoaded', () => {
                     score: -12,
                     nextQuestion: null,
                     endQuiz: true,
-                    message: "Our InStep program is specifically tailored for students attending certain academic institutions that align with our strategic recruitment goals. As this student attends a different university, they would not meet the current eligibility criteria."
+                    message: "A student with this status can proceed only if they attend certain academic institutions that align with our strategic recruitment goals. As this student attends a different university, they would not meet the current eligibility criteria."
                 }
-            ]
+            ],
+            "sourcePrefix": {
+                "q2": "This student doesn't have a permanent US work authorization.",
+                "q3": "This student is not in their third (junior) year of undergrad.",
+                "q4": "This student is a Computer Science or other technical degree major."
+            }
         },
         {
             id: 'q8',
             question: "Is the student a citizen of India?",
             options: [
                 { text: "Yes", score: 1, nextQuestion: 'q9' },
-                { text: "No", score: 1, nextQuestion: null }
+                { text: "No", score: 1, nextQuestion: 'null',  endQuiz: true }
             ]
         },
         {
             id: 'q9',
             question: "Is the student currently a PhD candidate studying Computer Science, Computer Engineering, or Data Science?",
             options: [
-                { text: "Yes", score: 1, nextQuestion: null },
+                { text: "Yes", score: 1, nextQuestion: 'success', endQuiz: true }, // Eligible
                 {
                     text: "No",
                     score: -12,
                     nextQuestion: null,
                     endQuiz: true,
-                    message: "InStep program is designed for students at the PhD level in Computer Science, Computer Engineering, or Data Science. This student's current academic standing does not align with that criterion."
+                    message: "A student from a top school, who is a citizen of India, *must* also be a PhD candidate studying computer science, computer engineering, or data science to be eligible for the InStep Internship. This student's academic background does not appear to meet that specific criterion."
                 }
             ]
         }
@@ -133,9 +138,11 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentQuestionIndex = 0;
     let yesAnswersCount = 0; // This now accumulates a total score that can be positive or negative
     let studentId = null; // Store the student ID received from the backend
+    let prevQuestionIndex = 0; // track index of previous question
+    let prevQuestionId = ""; // track id of previous question
 
     function loadQuestion() {
-        if (currentQuestionIndex < questions.length) {
+        //if (currentQuestionIndex < questions.length) {
             const q = questions[currentQuestionIndex];
             quizContainer.innerHTML = `
                 <div class="question-card">
@@ -153,9 +160,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
             `;
             attachEventListeners();
-        } else {
+        //}
+        /* else {
             showResults(); // After last question, show results and send assessment to backend
-        }
+        }*/
     }
 
     function attachEventListeners() {
@@ -164,17 +172,39 @@ document.addEventListener('DOMContentLoaded', () => {
             button.addEventListener('click', (event) => {
                 const score = parseInt(event.target.dataset.score);
                 const endQuiz = event.target.dataset.endQuiz === 'true'; // Check the endQuiz flag
-                const message = event.target.dataset.message; // Get the specific message
+                let message = event.target.dataset.message; // Get the specific message
+                const nextQuestionId = event.target.dataset.nextQuestion; // id of next question
 
                 // Accumulate score immediately
                 yesAnswersCount += score;
 
                 if (endQuiz) {
-                    endQuizEarly(message); // Pass the specific message
+                    if(score < 0) {
+                        // Append prefix to message if prefix exists
+                        const prefixMap = questions[currentQuestionIndex].sourcePrefix;
+
+                        if(prefixMap)
+                            message = `${prefixMap[prevQuestionId]} ${message}`;
+
+                        endQuizEarly(message); // Pass the specific message
+                    } else {
+                        showResults();
+                    }
+
                     return; // Stop further processing
                 }
 
-                currentQuestionIndex++;
+                // branch to explicit nextQuestion if provided
+                if (nextQuestionId) {
+                    prevQuestionIndex = currentQuestionIndex;
+                    prevQuestionId = questions[prevQuestionIndex].id;
+                    currentQuestionIndex = questions.findIndex(q => q.id === nextQuestionId);
+                }
+                else {
+                    // fallback: just go to the next in array
+                    currentQuestionIndex++;
+                }
+
                 loadQuestion();
             });
         });

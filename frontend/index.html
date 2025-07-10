@@ -7,9 +7,11 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body style="display:flex;flex-direction:column;align-items:center;"> <!-- Temp code to allow quiz and point & clcik to stack.-->
-    <div class="container">
-        <h1>InStep Referral Assessment</h1>
-        <p>This quick assessment will help determine if a student is a good fit for the InStep program based on their qualifications.</p>
+    <div class="container" id="main-container">
+        <div id="title-container">
+            <h1>InStep Referral Assessment</h1>
+            <p>This quick assessment will help determine if a student is a good fit for the InStep program based on their qualifications.</p>
+        </div>
 
         <div id="start-container">
             <h2>Welcome!</h2>
@@ -54,8 +56,12 @@
     <!-- load canvas-txt (text drawing tool) -->
     <script src="https://unpkg.com/canvas-txt@4.1.1/dist/canvas-txt.min.js" defer></script>
 
+    <!-- cdnjs hosts CanvasInput as “CanvasInput” (global) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/CanvasInput/1.2.7/CanvasInput.min.js" integrity="sha512-aTgJg3PD5KbYPSHf7950yn5OLGjtEtuafpOHjp4HZ/f3JacYDaroNZwd0bgt+6/TFaOockZOPMB2EcVHK/mpLA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+
     <!--- load HTML Canvas (used to draw graphics on a web page via JavaScript.)-->
     <canvas id="gameCanvas"></canvas>
+
 
     <!--- Runs the game script-->
     <script type="module" src="/game/game.js"></script>

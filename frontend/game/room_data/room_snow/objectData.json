@@ -1,5 +1,41 @@
 [
   {
+    "id": "snowyHill",
+    "type": "rectangle",
+    "x": 678,
+    "y": 675,
+    "width": 939,
+    "height": 390,
+    "options": {
+        "isStatic": true,
+      "render": {
+        "sprite": {
+          "texture": "/game/images/matterObjectSprites/room_snow/snowyHill.png"
+        }
+      }
+    },
+    "metadata": {
+        "group": "hill"
+    }
+  },
+  {
+    "id": "snowball1",
+    "type": "circle",
+    "x": 434,
+    "y": 910,
+    "radius": 26,
+    "options": {
+      "render": {
+        "sprite": {
+          "texture": "/game/images/matterObjectSprites/room_snow/snowball1.png"
+        }
+      }
+    },
+    "metadata": {
+        "group": "snowball"
+    }
+  },
+  {
     "id": "tree1",
     "type": "rectangle",
     "x": 305,
@@ -35,42 +71,6 @@
     },
     "metadata": {
         "group": "tree"
-    }
-  },
-  {
-    "id": "snowyHill",
-    "type": "rectangle",
-    "x": 678,
-    "y": 675,
-    "width": 939,
-    "height": 390,
-    "options": {
-        "isStatic": true,
-      "render": {
-        "sprite": {
-          "texture": "/game/images/matterObjectSprites/room_snow/snowyHill.png"
-        }
-      }
-    },
-    "metadata": {
-        "group": "hill"
-    }
-  },
-  {
-    "id": "snowball1",
-    "type": "circle",
-    "x": 364,
-    "y": 591,
-    "radius": 26,
-    "options": {
-      "render": {
-        "sprite": {
-          "texture": "/game/images/matterObjectSprites/room_snow/snowball1.png"
-        }
-      }
-    },
-    "metadata": {
-        "group": "snowball"
     }
   },
   {
