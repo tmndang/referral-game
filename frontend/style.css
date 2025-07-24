@@ -181,3 +181,7 @@ p {
 #results-container .secondary-button {
     margin-top: 30px;
 }
+
+#result-message {
+  white-space: pre-wrap;
+}

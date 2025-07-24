@@ -7,6 +7,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const resultsContainer = document.getElementById('results-container');
     const resultMessage = document.getElementById('result-message');
     const restartButton = document.getElementById('restart-button');
+    const exceptionSuffix =
+    "\n\nIs there an exception for the children of a client or employee?\n\nNo, there are no exceptions."
 
     // Flowchart
     const questions = [
@@ -199,6 +201,7 @@ document.addEventListener('DOMContentLoaded', () => {
             resultsContainer.style.color = '#155724';
         } else {
             message += "Based on their qualifications, this program may not be a good fit for this student at this time.";
+            + exceptionSuffix;
             resultsContainer.style.borderColor = '#dc3545';
             resultsContainer.style.backgroundColor = '#f8d7da';
             resultsContainer.style.color = '#721c24';
@@ -242,7 +245,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function endQuizEarly(message) {
         quizContainer.style.display = 'none';
         resultsContainer.style.display = 'block';
-        resultMessage.textContent = message; // Use the passed message
+        resultMessage.textContent = message + exceptionSuffix; // Use the passed message
         resultsContainer.style.borderColor = '#dc3545';
         resultsContainer.style.backgroundColor = '#f8d7da'; // Light red background
         resultsContainer.style.color = '#721c24';
