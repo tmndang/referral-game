@@ -1,10 +1,10 @@
 // game.js
+// External library for drawing styled multiline text on canvas
 import { drawText as canvasTxtDrawText } 
   from 'https://cdn.jsdelivr.net/npm/canvas-txt@4.1.1/dist/canvas-txt.mjs';
 
+// Game engine utilities and physics integration (Matter.js-based)
 import {
-  engine,
-  world,
   setupMouse,
   updatePhysics,
   drawPhysicsBodies,
@@ -12,99 +12,49 @@ import {
   loadRoomFromData
 } from './physics.js';
 
+// DOM element references used to toggle visibility or update UI
 let mainContainer = null;
-let titleContainer = null;
-let startContainer = null;
-let startButton = null;
 let inputFormContainer = null;
-let studentDataForm = null;
 let quizContainer = null;
-let resultsContainer = null;
-let resultMessage = null;
-let restartButton = null;
 
+/**
+ * Hide the main game container until the quiz starts.
+ */
 document.addEventListener('DOMContentLoaded', () => {
 	mainContainer = document.getElementById('main-container');
 	mainContainer.style.display = 'none';
-
-	/*
-	 titleContainer = document.getElementById('title-container');
-     startContainer = document.getElementById('start-container');
-     startButton = document.getElementById('start-button');
-     inputFormContainer = document.getElementById('input-form-container');
-     studentDataForm = document.getElementById('student-data-form');
-     quizContainer = document.getElementById('quiz-container');
-     resultsContainer = document.getElementById('results-container');
-     resultMessage = document.getElementById('result-message');
-     restartButton = document.getElementById('restart-button');
-
-	
-	titleContainer.style.display = 'none';
-	startContainer.style.display = 'none';
-	startButton.style.display = 'none';
-	inputFormContainer.style.display = 'none';
-	studentDataForm.style.display = 'none';
-	quizContainer.style.display = 'none';
-	resultsContainer.style.display = 'none';
-	resultMessage.style.display = 'none';
-	startButton.style.display = 'none';
-	restartButton.style.display = 'none';
-	*/
 });
 
+/**
+ * Makes the game container visible when quiz begins.
+ */
 function quizStart() {
-	/*
 	mainContainer.style.display = 'block';
-	startButton.style.display = 'block';
-	inputFormContainer.style.display = 'block';
-	//studentDataForm.style.display = 'block';
-	quizContainer.style.display = 'block';
-	resultsContainer.style.display = 'block';
-	resultMessage.style.display = 'block';
-	startButton.style.display = 'block';
-	//restartButton.style.display = 'block';
-	*/
-
-	mainContainer.style.display = 'block';
-
-	/*
-	// go to initial state of quiz
-	titleContainer.style.display = 'block';
-	startContainer.style.display = 'block';
-    //inputFormContainer.style.display = 'block';
-    //quizContainer.style.display = 'block';
-    //resultsContainer.style.display = 'block';
-	startButton.style.display = 'block';
-	*/
 }
 
 
 // Import quiz questions
 import { questions } from '../quiz_logic/quizData.js';
 
-// backendService.js allows communication with backend. NOT YET IMPLEMENTED
-//import { submitStudentData, submitAssessment } from '../quiz_logic/backendService.js';
-
+// Canvas initialization for drawing game interface
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 
-// 3) Forward all key events to CanvasInput
-//canvas.addEventListener('keydown',  e => nameField.onkeydown(e));
-//canvas.addEventListener('keyup',    e => nameField.onkeyup(e));
-
 // Resume upload button
 const resumeInput = document.getElementById('resume');
-const submitButton = document.getElementById('submit-student-data');
 
 // Mouse coordinates
 let mouseX = 0;
 let mouseY = 0;
 
-let studentId = null;
+// Game state flags
 let rafId;
 let gameActive = true;
 
-// Set mouse coordinates on move
+/**
+ * Updates global mouseX and mouseY to reflect cursor position
+ * relative to the internal canvas coordinate system.
+ */
 canvas.addEventListener('mousemove', e => {
   const rect   = canvas.getBoundingClientRect();
   const scaleX = canvas.width  / rect.width;
@@ -115,32 +65,34 @@ canvas.addEventListener('mousemove', e => {
   mouseY = (e.clientY - rect.top)  * scaleY;
 });
 
+// Quiz display and state tracking
 let displayText = "";
 let currentQuestionIndex = 0;
 let quizScore = 0;
 
-// Set up Matter.js mouse interactions.
-let mouseTools = setupMouse(canvas); // do this in game.js
+// Set up Matter.js mouse interactions
+let mouseTools = setupMouse(canvas);
 
-//import { engine } from './physics.js';
+// Visual popup text instances
 const popups = [];
 
+// Text input boxes for collecting student name
 let firstNameBox = null;
 let lastNameBox = null;
 
 let ignoreCanvasClick = false;
 
 /**
- * Create a piece of text that grows and fades over time
- *
+ * Represents a floating popup text element that scales and fades
+ * over time to create a dynamic visual effect.
  */
 class PopupText {
 
-	/*
-	* @param {string} text              - The string to display.
-	* @param {number} x                 - The horizontal center coordinate on canvas.
-	* @param {number} y                 - The vertical center coordinate on canvas.
-	*/
+  /**
+   * @param {string} text - The message to display.
+   * @param {number} x - X-coordinate (canvas space).
+   * @param {number} y - Y-coordinate (canvas space).
+   */
 	constructor(text, x, y) {
 		this.text     = text;
 		this.x        = x;
@@ -154,7 +106,10 @@ class PopupText {
 		this.age++;
 	}
 
-	// Use the canvas 
+	/**
+   * Renders the popup text using a combination of stroke and fill.
+   * @param {CanvasRenderingContext2D} ctx - The canvas context.
+   */ 
 	draw(ctx) {
 		const t     = this.age / this.duration;
 		const scale = 1 + t * 0.5;
@@ -164,7 +119,7 @@ class PopupText {
 		ctx.save();
 		ctx.globalAlpha = alpha;
 
-		// 1) Mirror what canvas-txt will do internally:
+		// Mirror what canvas-txt will do internally:
 		ctx.font = `bold ${size}px Arial`;
 
 		const pad = 8;
@@ -199,37 +154,50 @@ class PopupText {
 		ctx.restore();
 	}
 
+	// Indicates whether this popup has completed its animation.
 	get dead() {
 		return this.age >= this.duration;
 	}
 }
 
-// 2. helper to spawn one
+/**
+ * Creates a popup text instance and adds it to the render queue.
+ * 
+ * @param {string} text - The message to display.
+ * @param {number} x - X-coordinate (canvas space).
+ * @param {number} y - Y-coordinate (canvas space).
+ */
 function showPopup(text, x, y) {
   popups.push(new PopupText(text, x, y));
 }
 
-// Designed game resolution
+// Target internal canvas resolution for consistent rendering across devices
 const gameWidth = 1920;
 const gameHeight = 1080;
 
-// Display size. height won't go above screenHeightLimit
+// Actual screen height limit for responsive scaling
 const screenHeightLimit = 680;
 const screenWidth = window.innerWidth;
 const screenHeight = Math.min(window.innerHeight,screenHeightLimit);
 
-// Clamp scale factor to not exceed 1.0
+// Calculate canvas scale (never upscale beyond native resolution)
 const scale = Math.min(1, screenWidth / gameWidth, screenHeight / gameHeight);
 
-// Set internal resolution
+// Set internal canvas resolution (unscaled drawing space)
 canvas.width = gameWidth;
 canvas.height = gameHeight;
 
-// Scale DOM element to match device
+// Set scaled size for actual display on screen
 canvas.style.width = `${gameWidth * scale}px`;
 canvas.style.height = `${gameHeight * scale}px`;
 
-// 1) Utility to map DOM events → canvas-space coords
+/**
+ * Utility function to convert mouse event coordinates into canvas space.
+ *
+ * @param {HTMLCanvasElement} canvas - The canvas element.
+ * @param {MouseEvent} e - The DOM mouse event.
+ * @returns {{x: number, y: number}} - The adjusted canvas-space coordinates.
+ */
 function getCanvasCoords(canvas, e) {
   const rect   = canvas.getBoundingClientRect();
   const scaleX = canvas.width  / rect.width;
@@ -240,14 +208,23 @@ function getCanvasCoords(canvas, e) {
   };
 }
 
-// 2) The TextInputBox class
+/**
+ * A canvas-based input field that accepts typed user input.
+ * Relies on the `CanvasInput` library for rendering and managing input state.
+ */
 class TextInputBox {
   /**
-   * @param {HTMLCanvasElement} canvas
-   * @param {{ x:number, y:number, width:number, height:number,
-   *            placeHolder?:string,
-   *            fontSize?:number,
-   *            onsubmit?:Function }} opts
+   * Constructs a new text input box instance.
+   *
+   * @param {HTMLCanvasElement} canvas - The canvas to render into.
+   * @param {Object} opts - Configuration object.
+   * @param {number} opts.x - X-coordinate of the box.
+   * @param {number} opts.y - Y-coordinate of the box.
+   * @param {number} opts.width - Width of the box.
+   * @param {number} opts.height - Height of the box.
+   * @param {string} [opts.placeHolder] - Placeholder text to display when empty.
+   * @param {number} [opts.fontSize=18] - Font size for input text.
+   * @param {Function} [opts.onsubmit] - Optional handler for input submission.
    */
   constructor(canvas, opts) {
     this.canvas = canvas;
@@ -274,23 +251,16 @@ class TextInputBox {
       onsubmit:    opts.onsubmit    || (() => {}),
     });
 
-	//const { mouseX, mouseY } = getCanvasCoords(canvas, e);
-
-    // bind handlers
-	//if(mouseX >= this.x &&
-      //mouseX <= this.x + this.width &&
-      //mouseY >= this.y &&
-      //mouseY <= this.y + this.height)
-    	this._onMouseDown = this._onMouseDown.bind(this);
-    //this._onKeyDown   = this._onKeyDown.bind(this);
-    //this._onKeyUp     = this._onKeyUp.bind(this);
+    this._onMouseDown = this._onMouseDown.bind(this);
 
     canvas.addEventListener('mousedown', this._onMouseDown);
-    //canvas.addEventListener('keydown',   this._onKeyDown);
-    //canvas.addEventListener('keyup',     this._onKeyUp);
   }
 
-  // click → focus/blur
+  /**
+   * Internal event handler: enables focus if the click falls within box bounds.
+   *
+   * @param {MouseEvent} e - Mouse click event.
+   */
   _onMouseDown(e) {
 	const { x: mx, y: my } = getCanvasCoords(this.canvas, e);
 
@@ -309,33 +279,26 @@ class TextInputBox {
 
       this.hasFocus = true;
       this.field.focus();
-    } /*else {
-      this.hasFocus = false;
-      this.field.blur();
-    }*/
+    }
   }
 
-  /*
-  // only forward keys when focused
-  _onKeyDown(e) {
-    if (this.hasFocus) this.field.onkeydown(e);
-  }
-  _onKeyUp(e) {
-    if (this.hasFocus) this.field.onkeyup(e);
-  }
-	*/
-
-  // call each frame
+  // Renders the input box
   render() {
     this.field.render(this.ctx);
   }
 
-  // convenience
+  /**
+   * Gets the current text value from the input field.
+   *
+   * @returns {string} The user-entered text.
+   */
   value() {
     return this.field.value();
   }
 
-  // teardown (if ever needed)
+  /**
+   * Cleans up event listeners and resources associated with the input box.
+   */
   destroy() {
     this.field.destroy();
     this.canvas.removeEventListener('mousedown', this._onMouseDown);
@@ -344,6 +307,10 @@ class TextInputBox {
   }
 }
 
+/**
+ * Creates and displays two input boxes on the canvas for entering
+ * a student's first and last name. Initializes TextInputBox instances.
+ */
 function createNameInputBoxes() {
 	firstNameBox = new TextInputBox(canvas, {
 		x: 1350, y:  545, width: 150, height: 32,
@@ -358,6 +325,10 @@ function createNameInputBoxes() {
 	});
 }
 
+/**
+ * Destroys and removes the first and last name input boxes from the canvas,
+ * releasing resources and event listeners.
+ */
 function deleteNameInputBoxes() {
 	firstNameBox.destroy();
 	firstNameBox = null;
@@ -366,42 +337,54 @@ function deleteNameInputBoxes() {
 }
 
 
-// Set background image. Will be drawn every frame in the gameLoop() function
+// Main background image displayed during gameplay.
+// Updated dynamically based on selected challenge or scene.
 let backgroundImage = new Image();
 backgroundImage.src = '/game/images/backgrounds/bg_title.png';
 
-// Question Answer Box (temporary version)
+// Question-and-answer box UI overlay
 let qaBox = new Image();
 qaBox.src = '/game/images/questionBox.png';
 
+// Used in challenges to frame the question content
 let questionAnswerBoxTemp = new Image();
 questionAnswerBoxTemp.src = '/game/images/questionBox.png';
 
+// Decorative character asset
 let explorerTemp = new Image();
 explorerTemp.src = '/game/images/explorer.png';
 
 let parrot = new Image();
 parrot.src = '/game/images/parrot.png';
 
+// Logo for Infosys displayed on the hub screen
 let infosysLogo = new Image();
 infosysLogo.src = '/game/images/title/infosysLogo.png';
 
+// Logo for the referral game
 let referralGameLogo = new Image();
 referralGameLogo.src = '/game/images/title/referralGameLogo.png';
 
+// Character or figure shown on the main hub
 let hubExplorer = new Image();
 hubExplorer.src = '/game/images/title/hubExplorer.png';
 
+// UI asset showing instructions to the user
 let instructionBox = new Image();
 instructionBox.src = '/game/images/title/instructionBox.png';
 
+// Title text asset used on the hub screen
 let text_venture = new Image();
 text_venture.src = '/game/images/title/text_venture.png';
 
+// Image-based button to skip directly to the quiz
 let skipGameButton = new Image();
 skipGameButton.src = '/game/images/title/skipGameButton.png';
 
-// Place this near the top of your file, alongside other globals
+/**
+ * Coordinates and dimensions for the image-based skip button,
+ * used to bypass the game and go directly to the quiz interface.
+ */
 const skipBtn = {
   x: 1598,            // horizontal position on the canvas
   y: 965,             // vertical position on the canvas
@@ -409,8 +392,8 @@ const skipBtn = {
   height: 88          // button height in pixels
 };
 
+// Handle hover state for the skip button by changing the cursor
 canvas.addEventListener('mousemove', e => {
-  // existing coords logic runs first...
   const overSkip =
     mouseX >= skipBtn.x &&
     mouseX <= skipBtn.x + skipBtn.width &&
@@ -420,6 +403,7 @@ canvas.addEventListener('mousemove', e => {
   canvas.style.cursor = overSkip ? 'pointer' : 'default';
 });
 
+// Handle clicks on the skip button to jump directly to the quiz
 canvas.addEventListener('click', () => {
   // optional guard if you’re ignoring clicks at times
   if (ignoreCanvasClick) return;
@@ -442,18 +426,16 @@ let buttons = [];
 // Temporary text that will display what room we're in
 let currentStatus = "Main Hub";
 
-/*
-	Creates a Target object with these attributes. None of these are built-in
-	properties or automatically part of JavaScript objects. We're defining and
-	using them manually.
-	x: x-coordinate
-	y: y-coordinate
-	width: width of object
-	height: height of object
-	challengeNum: which challenge # this target leads to, 0-5
-	sprite: the sprite image that will be drawn for this Target
-*/
+/**
+ * Represents an interactive navigation button in the Main Hub
+ * that leads to a specific challenge room.
+ */
 class Target {
+  /**
+   * @param {number} x - X-coordinate on the canvas
+   * @param {number} y - Y-coordinate on the canvas
+   * @param {number} challengeNum - Challenge ID associated with this target (0–4)
+   */
 	constructor(x, y, challengeNum) {
 		this.x = x;
 		this.y = y;
@@ -466,36 +448,22 @@ class Target {
 		this.sprite = new Image();
 
 		this.sprite.src = '/game/images/title/numberBox.png';
-
-		/*
-		if(this.challengeNum == 0)
-			this.sprite.src = '/game/images/circles/circleBlue.png'; // leads to first challenge
-		else
-			this.sprite.src = '/game/images/circles/circleRed.png'; // leads nowhere
-		*/
 	}
 
-	/*
-		Draws the Target's current sprite. This is called every frame in the gameLoop() function (standard)
-	*/
-	
+    // Render the target icon and challenge number on canvas
 	draw() {
 		ctx.drawImage(this.sprite, this.x, this.y, this.width, this.height);
 		drawText(this.x + (this.width / 2), this.y + (this.height / 2) + 5, 72, this.str);
 	}
 
 	/*
-		Checks if you clicked within the bounds of the Target. This is run
-		by the event listener lower in this script
+		Checks if you clicked the Target
 	*/
 	checkClick(mouseX, mouseY) {
 		if(mouseX >= this.x
 		&& mouseX <= this.x + this.width
 		&& mouseY >= this.y
 		&& mouseY <= this.y + this.height) {
-            // Make Circle Green after being clicked
-            //this.sprite.src = '/game/images/circles/circleGreen.png';
-
             // One target will change the background image
             if(this.challengeNum == 0) {
 				switchToRoom('room_beach');
@@ -524,14 +492,10 @@ class Target {
     }
 }
 
-/*
-Creates a Target object with these attributes. None of these are built-in
-	properties or automatically part of JavaScript objects. We're defining and
-	using them manually.
-	x: x-coordinate
-	y: y-coordinate
-	str: text of button
-*/
+/**
+ * Represents a clickable UI button within challenge rooms.
+ * Used for answering questions, continuing, restarting, or uploading resumes.
+ */
 class Button {
 	constructor(x, y, str) {
 		this.x = x;
@@ -545,9 +509,9 @@ class Button {
 		this.spriteHighlighted.src = '/game/images/answerButton_h.png';
 	}
 
-	/*
-		Draws the button
-	*/
+	/**
+   * Renders the button with hover highlight effect and dynamic font sizing.
+   */
 	draw() {
 		if(currentStatus != "Main Hub") {
 
@@ -556,16 +520,9 @@ class Button {
               ? 'brightness(1.1)' 
               : 'none';
 
-			//if(mouseX > this.x && mouseX < this.x + this.width
-             //&& mouseY > this.y && mouseY < this.y + this.height)
-				//ctx.drawImage(this.spriteHighlighted, this.x, this.y, this.width, this.height);
-			 //else
-				ctx.drawImage(this.sprite, this.x, this.y, this.width, this.height);
+			ctx.drawImage(this.sprite, this.x, this.y, this.width, this.height);
 
 			ctx.filter = 'none';
-
-			//drawText(this.x + (this.width / 2), this.y + (this.height / 2) + 3, 24, this.str);
-			//ctx.drawText(this.x + (this.width / 2), this.y + (this.height / 2), 24, "Yes");
 
 			let myFontSize = 36;
 
@@ -581,9 +538,12 @@ class Button {
 		}
 	}
 
-	/*
-		Check if button clicked
-	*/
+	/**
+   * Responds to click events and executes corresponding game logic based on button type.
+   *
+   * @param {number} mouseX - X coordinate of the click
+   * @param {number} mouseY - Y coordinate of the click
+   */
 	checkClick(mouseX, mouseY) {
 		if(mouseX >= this.x
 		&& mouseX <= this.x + this.width
@@ -616,6 +576,12 @@ class Button {
     }
 }
 
+/**
+ * Submits the student’s first name, last name, and uploaded resume to the backend API.
+ * Validates required fields, sends data as multipart/form-data, and handles response.
+ *
+ * If submission is successful, it stores the returned studentId and transitions to quiz.
+ */
 async function submitStudentData() {
 	const firstName = firstNameBox.value();
 	const lastName = lastNameBox.value();
@@ -656,24 +622,17 @@ async function submitStudentData() {
 			}
 }
 
-/*
-	Loads a room from a .json file
-*/
-/*
-async function switchToRoom(roomName) {
-  const response = await fetch(`./game/room_data/${roomName}/objectData.json`);
-  const json = await response.json();
-
-  clearWorld();
-  loadRoomFromData(json);
-  mouseTools = setupMouse(canvas); // re-run it after loading the new room
-}
-  */
-
 const roomName = 'room_jungle';
 
 import { loadRoomInteractions } from './physics.js';
 
+
+/**
+ * Switches the game to a specific room environment.
+ * Loads object data, clears the current Matter.js physics world, and sets up new collisions.
+ *
+ * @param {string} roomName - The name of the room to load (used as folder path).
+ */
 async function switchToRoom(roomName) {
   const response = await fetch(`./game/room_data/${roomName}/objectData.json`);
   const json     = await response.json();
@@ -688,60 +647,28 @@ async function switchToRoom(roomName) {
   mouseTools = setupMouse(canvas);
 }
 
-/*
--------------------
 
-*/
-
+/**
+ * Loads room object definitions from the specified JSON file.
+ *
+ * @param {string} roomName - Name of the room (used in path).
+ * @returns {Promise<Object[]>} Parsed JSON object list representing physical room elements.
+ * @throws Will throw an error if the room data cannot be fetched.
+ */
 async function loadRoomData(roomName) {
   const resp = await fetch(`game/room_data/${roomName}/objectData.json`);
   if (!resp.ok) throw new Error('Could not load room data');
   return resp.json();  // returns an array of objects
 }
 
-/*
-function makeSpritePrompt(raw) {
-  return [
-    "A clean 2D game sprite",
-    "flat color, bold black outline",
-    "no textures or fabric patterns",
-    "centered on a transparent background",
-    "in a simple cartoon style",
-    `depicting ${raw}`
-  ].join(", ");
-}
-  */
-
-/*
-function makeSpritePrompt(raw) {
-  return [
-    "A clean 2D game sprite",
-    "flat color, bold black outline",
-    "no textures or fabric patterns",
-    "centered on a transparent background",
-    "in a simple hand-painted style",
-    `depicting ${raw}`
-  ].join(", ");
-}
-  */
- 
 
 
-
-
-/*
-
---------------------------
-
-
-*/
-
-
-/*
-	Spawns Target objects at random coordinates, then adds them
-	to the targets array. Run when the game starts (at the very
-	bottom of this script)
-*/
+/**
+ * Spawns clickable challenge targets at fixed screen coordinates
+ * and populates the `targets` array.
+ *
+ * @param {number} num - Total number of challenge targets to create (max 5 supported).
+ */
 function spawnTargets(num) {
 	for(let i = 0; i < num; i++) {
 		// Setting coordinates to clickable locations on screen
@@ -780,10 +707,14 @@ function spawnTargets(num) {
 	}
 }
 
-/*
-	Custom function to draw outlined text with HTML5 canvas
-	at coordinates x, y and with text in str argument
-*/
+/**
+ * Draws outlined and filled text at specified canvas coordinates.
+ *
+ * @param {number} x         - X position (canvas units).
+ * @param {number} y         - Y position (canvas units).
+ * @param {number} fontSize  - Font size in pixels.
+ * @param {string} str       - The string to render.
+ */
 function drawText(x, y, fontSize, str) {
 	// Draw text
 	ctx.font = String(fontSize) + "px Arial";
@@ -800,11 +731,10 @@ function drawText(x, y, fontSize, str) {
 	ctx.fillText(str, x, y);
 }
 
-/*
-	This event listener runs when the user clicks. It passes
-	an event object e, which lets you get the user's mouse coordinates
-	from e.clientX nd e.clientY
-*/
+/**
+ * Main canvas click event listener.
+ * Delegates to Target or Button objects depending on context.
+ */
 canvas.addEventListener('click', (e) => {
 	console.log("addEventListener('click') run.");
 	if(ignoreCanvasClick == false) {
@@ -815,14 +745,6 @@ canvas.addEventListener('click', (e) => {
 		// Calculate the scaling factors between the internal canvas size and its displayed size.
 		const scaleX = canvas.width / rect.width;
 		const scaleY = canvas.height / rect.height;
-		
-		/*
-		// Convert click coordinates to the internal coordinate system:
-		const mouseX = (e.clientX - rect.left) * scaleX;
-		const mouseY = (e.clientY - rect.top) * scaleY;
-		*/
-
-		
 
 		// Now pass these adjusted coordinates to your game logic.
 		if(currentStatus === "Main Hub") {
@@ -838,27 +760,23 @@ canvas.addEventListener('click', (e) => {
 	}
 });
 
-/*
-	Here is where we tell the game what to draw on the canvas. This
-	runs every frame
-*/
+/**
+ * Main game loop: updates simulation, draws background, UI, and objects.
+ * Called every animation frame via requestAnimationFrame.
+ */
 function gameLoop() {
 	if (!gameActive) return;
 
 	// Update Matter's physics simulation at ~60 FPS
-	//Engine.update(engine, 1000 / 60);
 	updatePhysics(1000 / 60);
 
 	// Canvas is cleared every frame
 	ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-	// Draw the background
+	// Draw the background (scaled to fit canvas)
 	if(backgroundImage.src != '')
 	{
-		// The next five lines are just math to make the background image never be stretched
 		const scale = Math.min(canvas.width / backgroundImage.width, canvas.height / backgroundImage.height);
-		//const scale = Math.min(1, screenWidth / gameWidth);
-
 		const newWidth = backgroundImage.width * scale;
 		const newHeight = backgroundImage.height * scale;
 		const x = (canvas.width - newWidth) / 2;
@@ -867,16 +785,14 @@ function gameLoop() {
 		ctx.drawImage(backgroundImage, x, y, newWidth, newHeight);
 	}
 
-	// Draw Main Hub
+	// Main Hub screen layout
 	if(currentStatus == "Main Hub") // targets only appear on the main hub
 	{
-		// Draw targets
-		//ctx.globalAlpha = 0.6; // makes all targets 40% transparent
+		// Draw clickable targets (buttons)
 		for (let i = 0; i < targets.length; i++) {
 			targets[i].draw();
 		}
-		//ctx.globalAlpha = 1.0; // reset to 1.0 so the next thing drawn after this isn't transparent
-	
+
 		// Draw Infosys logo
 		ctx.drawImage(infosysLogo, 609, 143, 339, 127);
 
@@ -895,9 +811,6 @@ function gameLoop() {
 		ctx.drawImage(text_venture, 751, 583, 444, 65);
 		ctx.globalAlpha = 1.0;
 
-		// Skip Game Button
-		//ctx.drawImage(skipGameButton, 1598, 965, 280, 88);
-
 		// Before drawing popups or physics bodies, for instance:
 		ctx.drawImage(
 			skipGameButton,
@@ -909,14 +822,13 @@ function gameLoop() {
 
 	}	
 
-	// Draw static screen elements
+	// Assessment/Challenge layout
 	if(currentStatus != "Main Hub") // currentStatus is always set to this in this version
 	{
 		// Draw questionAnswerBox
 		ctx.drawImage(questionAnswerBoxTemp, 1204, 148, 638, 772)
-		
 
-		// Draw physics bodies from the physics module.
+		// Draw physics bodies from the physics module
   		drawPhysicsBodies(ctx);
 
 		// Draw explorer
@@ -926,26 +838,6 @@ function gameLoop() {
 
 		// Draw parrot
 		ctx.drawImage(parrot, 1650, 50, 96, 187);
-
-		/*
-		// Draw question text
-		if (questions[currentQuestionIndex]) {
-			const question = questions[currentQuestionIndex].question;
-			ctx.fillStyle = '#000';
-			ctx.strokeWidth = 0;
-			canvasTxtDrawText(ctx, question, {
-				x:           1314,  // left edge of your box
-				y:           270,   // top of the box
-				width:       460,
-				height:      200,   // max height (optional)
-				fontSize:    30,
-				lineHeight:  32,
-				align:      'left',
-				color: 'black',
-				vAlign:     'middle'
-			});
-		}
-			*/
 
 		// Draw display text
 		ctx.fillStyle = '#000';
@@ -1006,62 +898,41 @@ export function switchToQuiz() {
   canvas.style.display = 'none';
 
   quizStart();
-
-  // 4. Show your quiz DOM
-  //    (Assumes your quiz’s root wrapper is <div class="container">…</div>)
-  //const container = document.querySelector('.container');
-  //container.style.display = 'flex';
-
-  // 5. Dynamically load & run script.js
-  //const quizScript = document.createElement('script');
-  //quizScript.src = 'script.js';
-  //quizScript.defer = true;
-  //document.body.appendChild(quizScript);
 }
 
-
 let canvasInputTest = new CanvasInput({
-		canvas: document.getElementById('canvas'),
-		x: 50,
-		y: 50,
-		fontSize: 18,
-		fontFamily: 'Arial',
-		fontColor: '#212121',
-		fontWeight: 'bold',
-		width: 300,
-		padding: 8,
-		borderWidth: 1,
-		borderColor: '#000',
-		borderRadius: 3,
-		boxShadow: '1px 1px 0px #fff',
-		innerShadow: '0px 0px 5px rgba(0, 0, 0, 0.5)',
-		placeHolder: 'Enter message here...'
-	});
+	canvas: document.getElementById('canvas'),
+	x: 50,
+	y: 50,
+	fontSize: 18,
+	fontFamily: 'Arial',
+	fontColor: '#212121',
+	fontWeight: 'bold',
+	width: 300,
+	padding: 8,
+	borderWidth: 1,
+	borderColor: '#000',
+	borderRadius: 3,
+	boxShadow: '1px 1px 0px #fff',
+	innerShadow: '0px 0px 5px rgba(0, 0, 0, 0.5)',
+	placeHolder: 'Enter message here...'
+});
 
 if(canvasInputTest) {
 	console.log("canvasInputTest was created.");
 }
 
+/**
+ * Initializes the game state:
+ * - Loads interactive room object data
+ * - Attaches mouse hover handlers for text inputs
+ * - Begins main game loop
+ */
 async function init() {
-
-	
-
 	console.log("init() function run.");
-  // 1. Load prompts
+
   const roomName   = 'room_custom';  // or dynamic
   const objects    = await loadRoomData(roomName);
-
-  /*
-  // 2. Generate sprite URLs
-  const enriched   = await generateSprites(objects);
-
-  // 3. Preload images (optional)
-  await Promise.all(enriched.map(o => {
-    const img = new Image();
-    img.src   = o.spriteUrl;
-    return img.decode();
-  }));
-  */
 
   canvas.addEventListener('mousemove', e => {
   const { x, y } = getCanvasCoords(canvas, e);
@@ -1081,27 +952,19 @@ async function init() {
   canvas.style.cursor = (overFirst || overLast) ? 'text' : 'default';
 });
 
-
-  // 4. Start your game with enriched objects
+  // Start game loop
   gameLoop();
 }
 
 spawnTargets(5);
 init().catch(console.error);
 
-
-// Start game and load room
-
-//buttons.push(new Button(25, 430, "Back"));
-//buttons.push(new Button(1332, 696, "Yes"));
-//buttons.push(new Button(1542, 696, "No"));
-
-//addButton(25, 430, "Back");
-
-
-//gameLoop();
-//switchToRoom('room_beach.json');
-
+/**
+ * Advances the quiz state based on the selected option.
+ * Updates quiz score, transitions between questions, and handles quiz completion logic.
+ *
+ * @param {string} selectedText - The text of the selected answer option
+ */
 function progressQuiz(selectedText) {
 	let chosenOpt = null;
 	let currenQ = null;
@@ -1123,8 +986,6 @@ function progressQuiz(selectedText) {
 		// Advance currentQuestionIndex to next
 		currentQuestionIndex = nextIndex;
 	} else {
-		// temporarily hardcoding for multi-choice question
-		//createNameInputBoxes(); // create firstName and lastName input boxes
 		nextID = 'q8';
 		nextIndex = currentQuestionIndex + 1;
 		currentQ = questions[currentQuestionIndex];
@@ -1168,16 +1029,25 @@ function progressQuiz(selectedText) {
 	}
 }
 
+/**
+ * Returns the display text for the current quiz question.
+ * Current version falls back to a hardcoded question.
+ *
+ * @returns {string} The question text to display
+ */
 function getCurrentQuestionText() {
 	if(questions[currentQuestionIndex].options.length == 2)
-	//if(currentQuestionIndex != 8) // temporarily hardcoding
 		return questions[currentQuestionIndex].question;
 	else {
-		// Temporarily hardcoding
 		return "Does the student attend one of the following schools?:  Harvard, Stanford, MIT, Yale, Princeton, Columbia, University of Pennsylvania, Carnegie Mellon, Georgia Tech, NYU, UT-Austin, U-Washington (Seattle), UCLA, USC, UC-Berkeley, Brown, Cornell.";
 	}
 }
 
+/**
+ * Updates the visible buttons based on quiz state.
+ *
+ * @param {string} state - One of: "yesno", "continue", "restart", "uploadresume"
+ */
 function setButtonLayout(state) {
 	clearButtons();
 
@@ -1195,31 +1065,32 @@ function setButtonLayout(state) {
 	}
 }
 
+/**
+ * Adds a new button to the canvas UI.
+ *
+ * @param {number} x - X coordinate of the button
+ * @param {number} y - Y coordinate of the button
+ * @param {string} buttonName - Label to display on the button
+ */
 function addButton(x, y, buttonName) {
 	buttons.push(new Button(x, y, buttonName));
 }
 
+/**
+ * Removes all buttons from the canvas.
+ */
 function clearButtons() {
 	buttons.splice(0, buttons.length);
 }
 
-/*
-function removeButton(buttonName) {
-	for(var i = 0; i < buttons.length; i++) {
-		if(buttons.get(i).str === buttonName) {
-			buttons.splice(i, 1);
-		}
-	}
-}
-	*/
-
 export { showPopup };
 
-
-
-
-
-// Helper function to display messages instead of alert()
+/**
+ * Displays a modal-style message on the screen.
+ * Used to provide user feedback instead of alert().
+ *
+ * @param {string} message - The message to display in the modal
+ */
     function displayMessageModal(message) {
         const modal = document.createElement('div');
         modal.classList.add('modal');

@@ -119,7 +119,7 @@ export function loadRoomFromData(roomData) {
       // optionally set the mask too, e.g. to allow monkey collisions
       body.collisionFilter.mask = CATEGORY_DEFAULT | CATEGORY_SENSOR | CATEGORY_VINE;
 
-      // anchor at the top‐center of your sprite
+      // anchor at the top‐center
       const anchorX = entry.x + entry.width  / 2;
       const anchorY = entry.y - entry.height / 2;              // top of the sprite
 
@@ -174,11 +174,11 @@ export function loadRoomFromData(roomData) {
 
   World.add(world, [ground, ceiling, leftWall, rightWall, QABox]);
 
-  // …after you’ve added all bodies (including monkey & vine1)…
+  // after all bodies addded (including monkey & vine1)
   const monkey = bodyMap['monkey'];
   const vine1  = bodyMap['vine1'];
 
-  // say your sprite is 256px wide by 512px tall  
+  // say sprite is 256px wide by 512px tall  
   // and the hands sit 64px from the left edge, 400px down from the top
   if(monkey)
     monkey.spriteAnchor = { x: 84, y: 100 };
@@ -190,25 +190,16 @@ Events.on(engine, 'afterUpdate', () => {
   const monkey = bodyMap['monkey'];
   const vine   = attachedVine;
 
-  // 1) position snap (you probably already have this)
-  //const targetPos = Vector.add(vine.position, attachOffset);
-  //Body.setPosition(monkey, targetPos);
-
-  // 1) position snap + extra 100px down the vine
+  // position snap + extra 100px down the vine
   const basePos   = Vector.add(vine.position, attachOffset);
-  // rotate a (0,100) vector into world space so “down” follows the vine’s angle
-  //const extra     = Vector.rotate({ x: -40, y: 100 }, vine.angle);
   const extra     = Vector.rotate({ x: 0, y: 100 });
   const targetPos = Vector.add(basePos, extra);
 
- // // if monkey is to the right of the vine, flip its sprite horizontally
-   //monkey.render.sprite.xScale = monkey.position.x > vine.position.x ? -1 : 1;
-
- // flag for your renderer
+ // flag for renderer
  monkey.isFacingLeft = monkey.position.x > vine.position.x;
 
-  // 2) angle snap: vine.angle + the saved offset
-  const targetAngle = vine.angle /*+ attachAngleOffset*/;
+  // angle snap: vine.angle + the saved offset
+  const targetAngle = vine.angle;
   Body.setAngle(monkey, targetAngle);
 
   // zero out any residual spin
@@ -220,7 +211,6 @@ const MAX_VINE_ANGLE =  Math.PI / 2;   // 90°
 const MIN_VINE_ANGLE = -Math.PI / 2;   // ‑90°
 
 Events.on(engine, 'afterUpdate', () => {
-  // for each vine you care about
   ['vine1', 'vine2', 'vine3'].forEach(id => {
     const vine = bodyMap[id];
     if (!vine) return;
@@ -237,30 +227,6 @@ Events.on(engine, 'afterUpdate', () => {
     }
   });
 });
-
-
-/*
-if (monkey && vine1) {
-  // ← Step 1: compute half‐heights here
-  const monkeyHalfH = (monkey.bounds.max.y - monkey.bounds.min.y) / 2;
-  const vineHalfH   = (vine1 .bounds.max.y - vine1 .bounds.min.y) / 2;
-
-  // now build your “bottom‐of‐vine to top‐of‐monkey” rope
-  if (monkeyConstraint) World.remove(world, monkeyConstraint);
-  monkeyConstraint = Constraint.create({
-    bodyA:  monkey,
-    pointA: { x: 0,            y: -monkeyHalfH },  // top of monkey
-    bodyB:  vine1,
-    pointB: { x: 0,            y:  vineHalfH   },  // bottom of vine
-    length: 100,
-    stiffness: 1.0,
-    damping:   1.0
-  });
-  World.add(world, monkeyConstraint);
-}
-  */
-
-
 
   // 1. Define box’s bounds and make it a sensor
   const yumZoneX      = 1660;
@@ -498,7 +464,6 @@ export function updatePhysics(delta) {
     if (distance > maxStretch) {
       World.remove(world, constraint);
       constraintsList.splice(i, 1); // remove from the array
-      // Optional: trigger pluck sound/animation here
     }
   }
 
@@ -567,7 +532,7 @@ export function updatePhysics(delta) {
 // listen for collisions
 Events.on(engine, 'collisionStart', event => {
   event.pairs.forEach(pair => {
-    // 1) Identify monkey vs vine
+    // Identify monkey vs vine
     let monkeyBody, vineBody;
 
     if (pair.bodyA._jsonId === 'monkey') {
@@ -580,7 +545,7 @@ Events.on(engine, 'collisionStart', event => {
       || (currentVine && vineBody == currentVine)
     ) return;
 
-    // 2) Clear old constraint
+    // Clear old constraint
     if (monkeyConstraint) {
       let tempVine = currentVine;
       setTimeout(() => {
@@ -596,12 +561,8 @@ Events.on(engine, 'collisionStart', event => {
     currentVine = vineBody;
     vineBody.collisionFilter.mask = CATEGORY_VINE;
 
-    // 3) Grab the collision support point (world coords)
+    // Grab the collision support point (world coords)
     const support = pair.collision.supports[0];
-
-    // 4) Convert that to each body’s local space
-    //const localA = Vector.sub(support, monkeyBody.position);
-   // const localB = Vector.sub(support, vineBody.position);
 
     // Calculate half height of monkey (approximate hand position)
     const monkeyHalfHeight = (monkeyBody.bounds.max.y - monkeyBody.bounds.min.y) / 2;
@@ -613,7 +574,7 @@ Events.on(engine, 'collisionStart', event => {
     const localB = Vector.sub(support, vineBody.position);
 
 
-    // 5) Create a zero‐length constraint at that exact point
+    // Create a zero‐length constraint at that exact point
     monkeyConstraint = Constraint.create({
       bodyA: monkeyBody,
       pointA: localA,
@@ -627,17 +588,10 @@ Events.on(engine, 'collisionStart', event => {
 
     // record the vine we’re on
     attachedVine = vineBody;
-    // capture how much the monkey was rotated relative to the vine
-    //attachAngleOffset = monkeyBody.angle - vineBody.angle;
     attachAngleOffset = 0 - vineBody.angle;
 
   });
 });
-
-
-
-
-    
 
 export function drawPhysicsBodies(ctx) {
   Object.values(bodyMap).forEach(body => {
@@ -652,7 +606,6 @@ export function drawPhysicsBodies(ctx) {
     const anchor    = body.spriteAnchor || { x: width/2, y: height/2 };
 
     ctx.save();
-    
 
     // LIZARD (group 'npc'): no rotation, flip left/right by velocity.x
     if (body.metadata.group === 'lavalizard') {
@@ -667,8 +620,6 @@ export function drawPhysicsBodies(ctx) {
     // ALL OTHER BODIES: default rotate-and-draw
     ctx.translate(pos.x, pos.y);
       ctx.rotate(angle);
-    //ctx.translate(x, y);
-    //ctx.rotate(body.angle);
     if (body.isFacingLeft) {
           ctx.scale(-1, 1);
         }
@@ -686,15 +637,6 @@ export function drawPhysicsBodies(ctx) {
     ctx.restore();
   });
 }
-
-
-/*
-import interactionData from './room_data/room_beach/interactionData.json' with { type: 'json' };
-import { wireInteractions } from './interactionManager.js';
-
-// wire up JSON-driven collisions
-wireInteractions(interactionData);
-*/
 
 import { wireInteractions } from './interactionManager.js';
 

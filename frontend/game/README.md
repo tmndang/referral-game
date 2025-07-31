@@ -10,8 +10,6 @@ Project Status:
 
 This version of the app (that includes the "Point & Click" adventure game) will be pushed to a separate branch. The "main" branch (at https://github.com/tmndang/referral-game) will be modified to contain the Quiz-only version that does not have the themed Point & Click adventure game aspects.
 
-Quiz-only version will likely be integrated into training systems. Status of "Point & Click" adventure game remains undetermined as of this build. It may be hosted separately for private linking. The "Point & Click" game needs QA testing, comment cleanup, and better modularization of some code. The intern will determine the status and viability of the "Point & Click" game being hosted for private linking. In the meantime, the intern will focus on the "Quiz-only" version's integration and implementation, as well as the "Resume Parser" project.
-
 Summary:
 
 This is the README.md for the "Point & Click" game. By following the instructions in the project root's README.md (not the file you are currently reading), you can run the game.
@@ -19,6 +17,10 @@ This is the README.md for the "Point & Click" game. By following the instruction
 The game allows the player to progress through applicant referral quiz questions. If they are rejected, they start over. If they are an acceptable candidate for InStep, the user can enter the applicant's name and upload their resume. The resume is submitted to the same backend that the quiz uses.
 
 To skip the game and go directly to the quiz (which uses the same backend), click the "Skip Game" button in the bottom-right corner of the screen.
+
+Project Status:
+
+Beach, Volcano, and Forest environments are fully implemented. Snow environment has all objects implemented, but without interaction implemented. Ruins environment was planned to simply have a lot of blocks to stack and some kind of animation when they're stacked, but that has not been implemented yet. Project still needs QA testing and better modularization.
 
 Files:
 
