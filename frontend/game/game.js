@@ -519,12 +519,12 @@ canvas.addEventListener('click', ({ clientX, clientY }) => {
 
   // skip-button check
   if (
+	currentStatus === 'Main Hub' &&
     x >= skipBtn.x &&
     x <= skipBtn.x + skipBtn.width &&
     y >= skipBtn.y &&
     y <= skipBtn.y + skipBtn.height
   ) {
-    console.log('Skip button clicked at', x, y);
     return switchToQuiz();
   }
 
@@ -868,16 +868,16 @@ async function init() {
    ({ x: mouseX, y: mouseY } = toCanvasCoords(canvas, clientX, clientY));
 
   const overFirst = firstNameBox &&
-    x >= firstNameBox.x &&
-    x <= firstNameBox.x + firstNameBox.width &&
-    y >= firstNameBox.y &&
-    y <= firstNameBox.y + firstNameBox.height;
+    mouseX >= firstNameBox.x &&
+    mouseX <= firstNameBox.x + firstNameBox.width &&
+    mouseY >= firstNameBox.y &&
+    mouseY <= firstNameBox.y + firstNameBox.height;
 
   const overLast  = lastNameBox &&
-    x >= lastNameBox.x &&
-    x <= lastNameBox.x + lastNameBox.width &&
-    y >= lastNameBox.y &&
-    y <= lastNameBox.y + lastNameBox.height;
+    mouseX >= lastNameBox.x &&
+    mouseX <= lastNameBox.x + lastNameBox.width &&
+    mouseY >= lastNameBox.y &&
+    mouseY <= lastNameBox.y + lastNameBox.height;
 
   canvas.style.cursor = (overFirst || overLast) ? 'text' : 'default';
 });
