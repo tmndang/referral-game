@@ -191,6 +191,163 @@ canvas.height = gameHeight;
 canvas.style.width = `${gameWidth * scale}px`;
 canvas.style.height = `${gameHeight * scale}px`;
 
+// Contains all target objects
+let targets = [];
+let buttons = [];
+
+// Temporary text that will display what room we're in
+let currentStatus = "Main Hub";
+
+/**
+ * Represents an interactive navigation button in the Main Hub
+ * that leads to a specific challenge room.
+ */
+class Target {
+  /**
+   * @param {number} x - X-coordinate on the canvas
+   * @param {number} y - Y-coordinate on the canvas
+   * @param {number} challengeNum - Challenge ID associated with this target (0–4)
+   */
+	constructor(x, y, challengeNum) {
+		this.x = x;
+		this.y = y;
+		this.width = 130; // matches sprite width
+		this.height = 121; // matches sprite height
+		this.challengeNum = challengeNum;
+		this.str = String(challengeNum+1);
+
+		// Create the sprite attribute, setting it to an Image with a .src of a sprite address
+		this.sprite = new Image();
+
+		this.sprite.src = '/game/images/title/numberBox.png';
+	}
+
+    // Render the target icon and challenge number on canvas
+	draw() {
+		ctx.drawImage(this.sprite, this.x, this.y, this.width, this.height);
+		drawText(this.x + (this.width / 2), this.y + (this.height / 2) + 5, 72, this.str);
+	}
+
+	/*
+		Checks if you clicked the Target
+	*/
+	checkClick(mouseX, mouseY) {
+		if(mouseX >= this.x
+		&& mouseX <= this.x + this.width
+		&& mouseY >= this.y
+		&& mouseY <= this.y + this.height) {
+            // One target will change the background image
+            if(this.challengeNum == 0) {
+				switchToRoom('room_beach');
+                backgroundImage.src = '/game/images/backgrounds/bg_beach.png';
+			} else if(this.challengeNum == 1) {
+				switchToRoom('room_volcanic');
+                backgroundImage.src = '/game/images/backgrounds/bg_volcanic.png';
+			} else if(this.challengeNum == 2) {
+				switchToRoom('room_jungle');
+                backgroundImage.src = '/game/images/backgrounds/bg_jungle.png';
+			} else if(this.challengeNum == 3) {
+				switchToRoom('room_snow');
+                backgroundImage.src = '/game/images/backgrounds/bg_snow.png';
+			} else if(this.challengeNum == 4) {
+				switchToRoom('room_ruins');
+                backgroundImage.src = '/game/images/backgrounds/bg_ruins.png';
+			}
+			else
+				backgroundImage.src = '';
+
+			// Update display text
+			displayText = getCurrentQuestionText();
+
+			currentStatus = "Challenge " + this.challengeNum;
+        }       
+    }
+}
+
+/**
+ * Represents a clickable UI button within challenge rooms.
+ * Used for answering questions, continuing, restarting, or uploading resumes.
+ */
+class Button {
+	constructor(x, y, str) {
+		this.x = x;
+		this.y = y;
+		this.width = 175;
+		this.height = 80;
+		this.str = str;
+		this.sprite = new Image();
+		this.sprite.src = '/game/images/answerButton.png';
+		this.spriteHighlighted = new Image();
+		this.spriteHighlighted.src = '/game/images/answerButton_h.png';
+	}
+
+	/**
+   * Renders the button with hover highlight effect and dynamic font sizing.
+   */
+	draw() {
+		if(currentStatus != "Main Hub") {
+
+			ctx.filter = (mouseX > this.x && mouseX < this.x + this.width
+             && mouseY > this.y && mouseY < this.y + this.height)
+              ? 'brightness(1.1)' 
+              : 'none';
+
+			ctx.drawImage(this.sprite, this.x, this.y, this.width, this.height);
+
+			ctx.filter = 'none';
+
+			let myFontSize = 36;
+
+			if(this.str.length >= 10) {
+				myFontSize = 20;
+			}
+
+			ctx.font = String(myFontSize) + "px Arial";
+			ctx.fillStyle = "black";
+			ctx.textAlign = "center";
+			ctx.textBaseline = "middle";
+			ctx.fillText(this.str, this.x + (this.width / 2), this.y + (this.height / 2)+2);
+		}
+	}
+
+	/**
+   * Responds to click events and executes corresponding game logic based on button type.
+   *
+   * @param {number} mouseX - X coordinate of the click
+   * @param {number} mouseY - Y coordinate of the click
+   */
+	checkClick(mouseX, mouseY) {
+		if(mouseX >= this.x
+		&& mouseX <= this.x + this.width
+		&& mouseY >= this.y
+		&& mouseY <= this.y + this.height) {
+			// Right now, this button will always take you back to the hub
+			//currentStatus = "Main Hub";
+			//backgroundImage.src = '/game/images/backgrounds/defaultBackground.png';
+
+			if(this.str == "Yes" || this.str == "No") {
+				progressQuiz(this.str);
+			} else if(this.str == "Continue") {
+				// Continue to Main Hub for next question
+				clearWorld();
+				backgroundImage.src = '/game/images/backgrounds/bg_title.png';
+				currentStatus = "Main Hub";
+			} else if(this.str == "Restart") {
+				// Restart game
+				backgroundImage.src = '/game/images/backgrounds/bg_title.png';
+				currentQuestionIndex = 0;
+				quizScore = 0;
+				clearWorld();
+				currentStatus = "Main Hub";
+			} else if(this.str == "Upload Resume") {
+				resumeInput.click();
+			} else if(this.str == "Submit") {
+				submitStudentData();
+			}
+        }       
+    }
+}
+
 /**
  * A canvas-based input field that accepts typed user input.
  * Relies on the `CanvasInput` library for rendering and managing input state.
@@ -378,163 +535,6 @@ canvas.addEventListener('click', ({ clientX, clientY }) => {
     buttons.forEach(b => b.checkClick(x, y));
   }
 });
-
-// Contains all target objects
-let targets = [];
-let buttons = [];
-
-// Temporary text that will display what room we're in
-let currentStatus = "Main Hub";
-
-/**
- * Represents an interactive navigation button in the Main Hub
- * that leads to a specific challenge room.
- */
-class Target {
-  /**
-   * @param {number} x - X-coordinate on the canvas
-   * @param {number} y - Y-coordinate on the canvas
-   * @param {number} challengeNum - Challenge ID associated with this target (0–4)
-   */
-	constructor(x, y, challengeNum) {
-		this.x = x;
-		this.y = y;
-		this.width = 130; // matches sprite width
-		this.height = 121; // matches sprite height
-		this.challengeNum = challengeNum;
-		this.str = String(challengeNum+1);
-
-		// Create the sprite attribute, setting it to an Image with a .src of a sprite address
-		this.sprite = new Image();
-
-		this.sprite.src = '/game/images/title/numberBox.png';
-	}
-
-    // Render the target icon and challenge number on canvas
-	draw() {
-		ctx.drawImage(this.sprite, this.x, this.y, this.width, this.height);
-		drawText(this.x + (this.width / 2), this.y + (this.height / 2) + 5, 72, this.str);
-	}
-
-	/*
-		Checks if you clicked the Target
-	*/
-	checkClick(mouseX, mouseY) {
-		if(mouseX >= this.x
-		&& mouseX <= this.x + this.width
-		&& mouseY >= this.y
-		&& mouseY <= this.y + this.height) {
-            // One target will change the background image
-            if(this.challengeNum == 0) {
-				switchToRoom('room_beach');
-                backgroundImage.src = '/game/images/backgrounds/bg_beach.png';
-			} else if(this.challengeNum == 1) {
-				switchToRoom('room_volcanic');
-                backgroundImage.src = '/game/images/backgrounds/bg_volcanic.png';
-			} else if(this.challengeNum == 2) {
-				switchToRoom('room_jungle');
-                backgroundImage.src = '/game/images/backgrounds/bg_jungle.png';
-			} else if(this.challengeNum == 3) {
-				switchToRoom('room_snow');
-                backgroundImage.src = '/game/images/backgrounds/bg_snow.png';
-			} else if(this.challengeNum == 4) {
-				switchToRoom('room_ruins');
-                backgroundImage.src = '/game/images/backgrounds/bg_ruins.png';
-			}
-			else
-				backgroundImage.src = '';
-
-			// Update display text
-			displayText = getCurrentQuestionText();
-
-			currentStatus = "Challenge " + this.challengeNum;
-        }       
-    }
-}
-
-/**
- * Represents a clickable UI button within challenge rooms.
- * Used for answering questions, continuing, restarting, or uploading resumes.
- */
-class Button {
-	constructor(x, y, str) {
-		this.x = x;
-		this.y = y;
-		this.width = 175;
-		this.height = 80;
-		this.str = str;
-		this.sprite = new Image();
-		this.sprite.src = '/game/images/answerButton.png';
-		this.spriteHighlighted = new Image();
-		this.spriteHighlighted.src = '/game/images/answerButton_h.png';
-	}
-
-	/**
-   * Renders the button with hover highlight effect and dynamic font sizing.
-   */
-	draw() {
-		if(currentStatus != "Main Hub") {
-
-			ctx.filter = (mouseX > this.x && mouseX < this.x + this.width
-             && mouseY > this.y && mouseY < this.y + this.height)
-              ? 'brightness(1.1)' 
-              : 'none';
-
-			ctx.drawImage(this.sprite, this.x, this.y, this.width, this.height);
-
-			ctx.filter = 'none';
-
-			let myFontSize = 36;
-
-			if(this.str.length >= 10) {
-				myFontSize = 20;
-			}
-
-			ctx.font = String(myFontSize) + "px Arial";
-			ctx.fillStyle = "black";
-			ctx.textAlign = "center";
-			ctx.textBaseline = "middle";
-			ctx.fillText(this.str, this.x + (this.width / 2), this.y + (this.height / 2)+2);
-		}
-	}
-
-	/**
-   * Responds to click events and executes corresponding game logic based on button type.
-   *
-   * @param {number} mouseX - X coordinate of the click
-   * @param {number} mouseY - Y coordinate of the click
-   */
-	checkClick(mouseX, mouseY) {
-		if(mouseX >= this.x
-		&& mouseX <= this.x + this.width
-		&& mouseY >= this.y
-		&& mouseY <= this.y + this.height) {
-			// Right now, this button will always take you back to the hub
-			//currentStatus = "Main Hub";
-			//backgroundImage.src = '/game/images/backgrounds/defaultBackground.png';
-
-			if(this.str == "Yes" || this.str == "No") {
-				progressQuiz(this.str);
-			} else if(this.str == "Continue") {
-				// Continue to Main Hub for next question
-				clearWorld();
-				backgroundImage.src = '/game/images/backgrounds/bg_title.png';
-				currentStatus = "Main Hub";
-			} else if(this.str == "Restart") {
-				// Restart game
-				backgroundImage.src = '/game/images/backgrounds/bg_title.png';
-				currentQuestionIndex = 0;
-				quizScore = 0;
-				clearWorld();
-				currentStatus = "Main Hub";
-			} else if(this.str == "Upload Resume") {
-				resumeInput.click();
-			} else if(this.str == "Submit") {
-				submitStudentData();
-			}
-        }       
-    }
-}
 
 /**
  * Submits the student’s first name, last name, and uploaded resume to the backend API.
