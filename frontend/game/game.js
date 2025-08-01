@@ -12,6 +12,12 @@ import {
   loadRoomFromData
 } from './physics.js';
 
+// Centralized image loader
+import { loadImage } from './utils/assetLoader.js';
+
+// Coordinate converter
+import { toCanvasCoords } from './utils/coords.js'
+
 // DOM element references used to toggle visibility or update UI
 let mainContainer = null;
 let inputFormContainer = null;
@@ -55,14 +61,8 @@ let gameActive = true;
  * Updates global mouseX and mouseY to reflect cursor position
  * relative to the internal canvas coordinate system.
  */
-canvas.addEventListener('mousemove', e => {
-  const rect   = canvas.getBoundingClientRect();
-  const scaleX = canvas.width  / rect.width;
-  const scaleY = canvas.height / rect.height;
-
-  // convert from client coords to your internal canvas coords
-  mouseX = (e.clientX - rect.left) * scaleX;
-  mouseY = (e.clientY - rect.top)  * scaleY;
+canvas.addEventListener('mousemove', ({ clientX, clientY }) => {
+  ({ x: mouseX, y: mouseY } = toCanvasCoords(canvas, clientX, clientY));
 });
 
 // Quiz display and state tracking
@@ -192,23 +192,6 @@ canvas.style.width = `${gameWidth * scale}px`;
 canvas.style.height = `${gameHeight * scale}px`;
 
 /**
- * Utility function to convert mouse event coordinates into canvas space.
- *
- * @param {HTMLCanvasElement} canvas - The canvas element.
- * @param {MouseEvent} e - The DOM mouse event.
- * @returns {{x: number, y: number}} - The adjusted canvas-space coordinates.
- */
-function getCanvasCoords(canvas, e) {
-  const rect   = canvas.getBoundingClientRect();
-  const scaleX = canvas.width  / rect.width;
-  const scaleY = canvas.height / rect.height;
-  return {
-    x: (e.clientX - rect.left) * scaleX,
-    y: (e.clientY - rect.top ) * scaleY
-  };
-}
-
-/**
  * A canvas-based input field that accepts typed user input.
  * Relies on the `CanvasInput` library for rendering and managing input state.
  */
@@ -261,8 +244,8 @@ class TextInputBox {
    *
    * @param {MouseEvent} e - Mouse click event.
    */
-  _onMouseDown(e) {
-	const { x: mx, y: my } = getCanvasCoords(this.canvas, e);
+	_onMouseDown(e) {
+    	const { x: mx, y: my } = toCanvasCoords(this.canvas, e.clientX, e.clientY);
 
     const inside =
       mx >= this.x &&
@@ -325,61 +308,18 @@ function createNameInputBoxes() {
 	});
 }
 
-/**
- * Destroys and removes the first and last name input boxes from the canvas,
- * releasing resources and event listeners.
- */
-function deleteNameInputBoxes() {
-	firstNameBox.destroy();
-	firstNameBox = null;
-	lastNameBox.destroy();
-	lastNameBox = null;
-}
-
-
-// Main background image displayed during gameplay.
-// Updated dynamically based on selected challenge or scene.
-let backgroundImage = new Image();
-backgroundImage.src = '/game/images/backgrounds/bg_title.png';
-
-// Question-and-answer box UI overlay
-let qaBox = new Image();
-qaBox.src = '/game/images/questionBox.png';
-
-// Used in challenges to frame the question content
-let questionAnswerBoxTemp = new Image();
-questionAnswerBoxTemp.src = '/game/images/questionBox.png';
-
-// Decorative character asset
-let explorerTemp = new Image();
-explorerTemp.src = '/game/images/explorer.png';
-
-let parrot = new Image();
-parrot.src = '/game/images/parrot.png';
-
-// Logo for Infosys displayed on the hub screen
-let infosysLogo = new Image();
-infosysLogo.src = '/game/images/title/infosysLogo.png';
-
-// Logo for the referral game
-let referralGameLogo = new Image();
-referralGameLogo.src = '/game/images/title/referralGameLogo.png';
-
-// Character or figure shown on the main hub
-let hubExplorer = new Image();
-hubExplorer.src = '/game/images/title/hubExplorer.png';
-
-// UI asset showing instructions to the user
-let instructionBox = new Image();
-instructionBox.src = '/game/images/title/instructionBox.png';
-
-// Title text asset used on the hub screen
-let text_venture = new Image();
-text_venture.src = '/game/images/title/text_venture.png';
-
-// Image-based button to skip directly to the quiz
-let skipGameButton = new Image();
-skipGameButton.src = '/game/images/title/skipGameButton.png';
+// now each stays exactly the same name, one line each
+const backgroundImage       = loadImage('/game/images/backgrounds/bg_title.png');
+const qaBox                 = loadImage('/game/images/questionBox.png');
+const questionAnswerBoxTemp = loadImage('/game/images/questionBox.png');
+const explorerTemp          = loadImage('/game/images/explorer.png');
+const parrot                = loadImage('/game/images/parrot.png');
+const infosysLogo           = loadImage('/game/images/title/infosysLogo.png');
+const referralGameLogo      = loadImage('/game/images/title/referralGameLogo.png');
+const hubExplorer           = loadImage('/game/images/title/hubExplorer.png');
+const instructionBox        = loadImage('/game/images/title/instructionBox.png');
+const text_venture          = loadImage('/game/images/title/text_venture.png');
+const skipGameButton        = loadImage('/game/images/title/skipGameButton.png');
 
 /**
  * Coordinates and dimensions for the image-based skip button,
@@ -394,28 +334,48 @@ const skipBtn = {
 
 // Handle hover state for the skip button by changing the cursor
 canvas.addEventListener('mousemove', e => {
+  // convert raw client coords into canvas-space
+  const { x, y } = toCanvasCoords(canvas, e.clientX, e.clientY);
+
+  //console.log("CLICK x,y: " + x + ", " + y);
+  //console.log("CLICK x,y: " + x + ", " + y);
+
+
   const overSkip =
-    mouseX >= skipBtn.x &&
-    mouseX <= skipBtn.x + skipBtn.width &&
-    mouseY >= skipBtn.y &&
-    mouseY <= skipBtn.y + skipBtn.height;
+    x >= skipBtn.x &&
+    x <= skipBtn.x + skipBtn.width &&
+    y >= skipBtn.y &&
+    y <= skipBtn.y + skipBtn.height;
 
   canvas.style.cursor = overSkip ? 'pointer' : 'default';
 });
 
-// Handle clicks on the skip button to jump directly to the quiz
-canvas.addEventListener('click', () => {
-  // optional guard if you’re ignoring clicks at times
-  if (ignoreCanvasClick) return;
+canvas.addEventListener('click', ({ clientX, clientY }) => {
+  // ignoreCanvasClick has top priority, but consume/reset it
+  if (ignoreCanvasClick) {
+    ignoreCanvasClick = false;
+    return;
+  }
 
-  const clickedSkip =
-    mouseX >= skipBtn.x &&
-    mouseX <= skipBtn.x + skipBtn.width &&
-    mouseY >= skipBtn.y &&
-    mouseY <= skipBtn.y + skipBtn.height;
+  // map raw event to canvas-space
+  const { x, y } = toCanvasCoords(canvas, clientX, clientY);
 
-  if (clickedSkip) {
-    switchToQuiz();
+  // skip-button check
+  if (
+    x >= skipBtn.x &&
+    x <= skipBtn.x + skipBtn.width &&
+    y >= skipBtn.y &&
+    y <= skipBtn.y + skipBtn.height
+  ) {
+    console.log('Skip button clicked at', x, y);
+    return switchToQuiz();
+  }
+
+  // your existing click-routing logic
+  if (currentStatus === 'Main Hub') {
+    targets.forEach(t => t.checkClick(x, y));
+  } else {
+    buttons.forEach(b => b.checkClick(x, y));
   }
 });
 
@@ -647,7 +607,6 @@ async function switchToRoom(roomName) {
   mouseTools = setupMouse(canvas);
 }
 
-
 /**
  * Loads room object definitions from the specified JSON file.
  *
@@ -730,35 +689,6 @@ function drawText(x, y, fontSize, str) {
 	ctx.strokeText(str, x, y); // draw stroke first otherwise it will overlap text
 	ctx.fillText(str, x, y);
 }
-
-/**
- * Main canvas click event listener.
- * Delegates to Target or Button objects depending on context.
- */
-canvas.addEventListener('click', (e) => {
-	console.log("addEventListener('click') run.");
-	if(ignoreCanvasClick == false) {
-		console.log("3. ignoreCanvasClick() was false.");
-
-		const rect = canvas.getBoundingClientRect();
-		
-		// Calculate the scaling factors between the internal canvas size and its displayed size.
-		const scaleX = canvas.width / rect.width;
-		const scaleY = canvas.height / rect.height;
-
-		// Now pass these adjusted coordinates to your game logic.
-		if(currentStatus === "Main Hub") {
-			targets.forEach(target => target.checkClick(mouseX, mouseY));
-		}
-
-		if(currentStatus !== "Main Hub") {
-			buttons.forEach(button => button.checkClick(mouseX, mouseY));
-		}
-	} else {
-		console.log("4. ignoreCanvasClick() was true, setting to false.")
-		ignoreCanvasClick = false;
-	}
-});
 
 /**
  * Main game loop: updates simulation, draws background, UI, and objects.
@@ -934,8 +864,8 @@ async function init() {
   const roomName   = 'room_custom';  // or dynamic
   const objects    = await loadRoomData(roomName);
 
-  canvas.addEventListener('mousemove', e => {
-  const { x, y } = getCanvasCoords(canvas, e);
+  canvas.addEventListener('mousemove', ({ clientX, clientY }) => {
+   ({ x: mouseX, y: mouseY } = toCanvasCoords(canvas, clientX, clientY));
 
   const overFirst = firstNameBox &&
     x >= firstNameBox.x &&
@@ -1081,6 +1011,17 @@ function addButton(x, y, buttonName) {
  */
 function clearButtons() {
 	buttons.splice(0, buttons.length);
+}
+
+/**
+ * Destroys and removes the first and last name input boxes from the canvas,
+ * releasing resources and event listeners.
+ */
+function deleteNameInputBoxes() {
+	firstNameBox.destroy();
+	firstNameBox = null;
+	lastNameBox.destroy();
+	lastNameBox = null;
 }
 
 export { showPopup };
