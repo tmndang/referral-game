@@ -1,7 +1,3 @@
--------------------------------
-------Basic Point & Click------
--------------------------------
-
 # InStep Referral Assessment Game
 
 This project is a web-based **Referral Game** designed to help InStep quickly assess the qualifications of students referred by internal employees or external connections. It provides an interactive flowchart assessment and categorizes resumes based on the student's suitability for the program.
@@ -10,8 +6,6 @@ There are **two versions** of the project:
 
 - **Quiz-Only** version (default `main` branch): [main branch](https://github.com/tmndang/referral-game)
 - **Point & Click Adventure Game** version (this branch): [point-click-game branch](https://github.com/tmndang/referral-game/tree/point-click-game)
-
----
 
 ## Summary
 
